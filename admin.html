@@ -1,0 +1,146 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin - Shipment</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+</head>
+<body class="p-4">
+  <div class="container">
+    <h2>Admin Panel</h2>
+    <div id="authBox" class="mb-3">
+      <input id="email" class="form-control mb-2" placeholder="Email admin"/>
+      <input id="password" type="password" class="form-control mb-2" placeholder="Password"/>
+      <button id="btnLogin" class="btn btn-primary">Login</button>
+      <button id="btnLogout" class="btn btn-secondary d-none">Logout</button>
+      <div id="authMsg" class="mt-2 text-muted"></div>
+    </div>
+
+    <div id="app" style="display:none">
+      <h4>Buat / Cari Shipment</h4>
+      <div class="row g-2 mb-2">
+        <div class="col"><input id="bl" class="form-control" placeholder="BL Number"/></div>
+        <div class="col"><input id="container" class="form-control" placeholder="Container Number"/></div>
+        <div class="col"><select id="type" class="form-control"><option>FCL</option><option>LCL</option></select></div>
+      </div>
+      <div class="mb-2">
+        <input id="origin" class="form-control mb-1" placeholder="Origin"/>
+        <input id="destination" class="form-control" placeholder="Destination"/>
+      </div>
+      <button id="btnCreate" class="btn btn-success mb-3">Create / Update Basic</button>
+
+      <h5>Update Tracking</h5>
+      <div class="mb-2">
+        <input id="trackTitle" class="form-control mb-1" placeholder="Status (e.g. On Vessel)"/>
+        <input id="trackDetail" class="form-control mb-1" placeholder="Detail (optional)"/>
+        <input id="trackDate" type="datetime-local" class="form-control mb-1"/>
+      </div>
+      <button id="btnAddTrack" class="btn btn-primary">Add Tracking</button>
+
+      <hr/>
+      <div id="statusBox"></div>
+    </div>
+  </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "REPLACE",
+    authDomain: "REPLACE",
+    projectId: "REPLACE",
+    storageBucket: "REPLACE",
+    messagingSenderId: "REPLACE",
+    appId: "REPLACE"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const emailEl = document.getElementById('email');
+  const pwdEl = document.getElementById('password');
+  const btnLogin = document.getElementById('btnLogin');
+  const btnLogout = document.getElementById('btnLogout');
+  const authMsg = document.getElementById('authMsg');
+
+  const appDiv = document.getElementById('app');
+  const blEl = document.getElementById('bl');
+  const containerEl = document.getElementById('container');
+  const typeEl = document.getElementById('type');
+  const originEl = document.getElementById('origin');
+  const destEl = document.getElementById('destination');
+  const btnCreate = document.getElementById('btnCreate');
+
+  const trackTitle = document.getElementById('trackTitle');
+  const trackDetail = document.getElementById('trackDetail');
+  const trackDate = document.getElementById('trackDate');
+  const btnAddTrack = document.getElementById('btnAddTrack');
+
+  const statusBox = document.getElementById('statusBox');
+
+  btnLogin.addEventListener('click', async ()=>{
+    try {
+      await signInWithEmailAndPassword(auth, emailEl.value, pwdEl.value);
+      authMsg.textContent = 'Logged in';
+    } catch(e) { authMsg.textContent = 'Login error: ' + e.message; }
+  });
+  btnLogout.addEventListener('click', async ()=> {
+    await signOut(auth);
+  });
+
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      document.getElementById('authBox').querySelectorAll('input,button').forEach(n=>n.disabled=true);
+      btnLogout.classList.remove('d-none');
+      appDiv.style.display = 'block';
+      loadStatus(''); // reset
+    } else {
+      document.getElementById('authBox').querySelectorAll('input,button').forEach(n=>n.disabled=false);
+      btnLogout.classList.add('d-none');
+      appDiv.style.display = 'none';
+    }
+  });
+
+  btnCreate.addEventListener('click', async ()=> {
+    const bl = blEl.value.trim();
+    const container = containerEl.value.trim();
+    if (!bl && !container) return alert('Masukkan BL atau Container minimal satu.');
+    // use doc id = bl if exists else container else auto
+    const docId = bl || container;
+    const ref = doc(db, 'shipments', docId);
+    const payload = {
+      blNumber: bl || null,
+      containerNumber: container || null,
+      type: typeEl.value,
+      origin: originEl.value,
+      destination: destEl.value,
+      updatedAt: serverTimestamp()
+    };
+    await setDoc(ref, payload, { merge: true });
+    statusBox.innerHTML = `<div class="alert alert-success">Shipment saved (id: ${docId})</div>`;
+  });
+
+  btnAddTrack.addEventListener('click', async ()=>{
+    const bl = blEl.value.trim();
+    const container = containerEl.value.trim();
+    if (!bl && !container) return alert('Masukkan BL atau Container untuk menambah tracking.');
+    const docId = bl || container;
+    const ref = doc(db, 'shipments', docId);
+
+    const dateVal = trackDate.value ? new Date(trackDate.value) : new Date();
+    const trackObj = {
+      title: trackTitle.value || 'Update',
+      detail: trackDetail.value || '',
+      date: { seconds: Math.floor(dateVal.getTime()/1000), nanoseconds: 0 }
+    };
+    // append to array field 'tracking' (create if not exist)
+    await updateDoc(ref, { tracking: arrayUnion(trackObj), updatedAt: serverTimestamp() });
+    statusBox.innerHTML = `<div class="alert alert-success">Tracking ditambahkan pada ${docId}</div>`;
+    // clear
+    trackTitle.value=''; trackDetail.value=''; trackDate.value='';
+  });
+</script>
+</body>
+</html>
