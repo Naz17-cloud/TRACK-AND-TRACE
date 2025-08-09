@@ -55,20 +55,20 @@
       text-align: left;
     }
     th {
-      background-color: rgba(60, 120, 180, 0.9); /* biru teduh */
+      background-color: rgba(60, 120, 180, 0.9);
       font-weight: 600;
       color: #fff;
     }
     td {
-      background-color: #dcdcdc; /* putih gelap */
+      background-color: #dcdcdc;
       color: #333;
     }
     tr:nth-child(even) td {
-      background-color: #c9c9c9; /* putih gelap sedikit beda */
+      background-color: #c9c9c9;
     }
     button {
-      padding: 8px 16px;
-      margin: 10px 10px 20px 0;
+      padding: 6px 12px;
+      margin: 5px;
       border: none;
       border-radius: 5px;
       background-color: #ff9800;
@@ -76,6 +76,7 @@
       font-weight: 600;
       cursor: pointer;
       transition: background-color 0.3s ease;
+      font-size: 12px;
     }
     button:hover {
       background-color: #e68900;
@@ -233,20 +234,37 @@
             td.classList.add("editable");
             tr.appendChild(td);
         });
+
         const actionTd = document.createElement("td");
-        actionTd.innerHTML = `<span class="delete-btn">🗑</span>`;
-        actionTd.querySelector(".delete-btn").addEventListener("click", async () => {
+        const saveBtn = document.createElement("button");
+        saveBtn.textContent = "Save";
+        saveBtn.addEventListener("click", async () => {
+            const updatedData = {};
+            fields.forEach((field, index) => {
+                updatedData[field] = tr.cells[index].textContent.trim();
+            });
+            await updateDoc(doc(db, "shipments", id), updatedData);
+            alert("Data berhasil disimpan!");
+        });
+
+        const deleteBtn = document.createElement("span");
+        deleteBtn.textContent = "🗑";
+        deleteBtn.classList.add("delete-btn");
+        deleteBtn.addEventListener("click", async () => {
             if (confirm("Yakin hapus data ini?")) {
                 await deleteDoc(doc(db, "shipments", id));
                 loadShipments();
             }
         });
+
+        actionTd.appendChild(saveBtn);
+        actionTd.appendChild(deleteBtn);
         tr.appendChild(actionTd);
         shipmentTableBody.appendChild(tr);
     }
 
     document.getElementById("addRowBtn").addEventListener("click", async () => {
-        await addDoc(collection(db, "shipments"), {
+        const docRef = await addDoc(collection(db, "shipments"), {
             billOfLading: "", vesselVoyage: "", eta: "", portTransit: "", connectingVessel: "",
             etd: "", etaPod: "", portDestination: "", doReleaseDate: "", cargoReleaseDate: ""
         });
@@ -260,20 +278,14 @@
             const bl = row.cells[0].textContent.toLowerCase();
             const vessel = row.cells[1].textContent.toLowerCase();
             const pod = row.cells[7].textContent.toLowerCase();
-            if (bl.includes(filter) || vessel.includes(filter) || pod.includes(filter)) {
-                row.style.display = "";
-            } else {
-                row.style.display = "none";
-            }
+            row.style.display = (bl.includes(filter) || vessel.includes(filter) || pod.includes(filter)) ? "" : "none";
         }
     });
 
-    // Export to Excel
     document.getElementById("exportExcel").addEventListener("click", () => {
         exportTableToExcel("shipmentTable", "shipment_data");
     });
 
-    // Export to CSV
     document.getElementById("exportCSV").addEventListener("click", () => {
         exportTableToCSV("shipment_data.csv");
     });
