@@ -1,67 +1,99 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Shipment Tracking</title>
-  <style>
+<meta charset="UTF-8">
+<title>Shipment Tracking</title>
+<style>
     body { font-family: Arial, sans-serif; margin: 20px; }
-    input, button { padding: 8px; margin: 5px 0; }
-    .shipment { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
-  </style>
+    h2 { color: #333; }
+    input { padding: 6px; margin: 4px; width: 250px; }
+    button { padding: 6px 12px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+    th { background-color: #f2f2f2; }
+</style>
 </head>
 <body>
-  <h2>Tracking Shipment</h2>
-  <input type="text" id="searchInput" placeholder="Masukkan Nomor BL">
-  <button onclick="searchShipment()">Cari</button>
-  <div id="results"></div>
 
-  <script type="module">
+<h2>Shipment Tracking</h2>
+
+<div>
+    <input type="text" id="searchInput" placeholder="Masukkan Bill of Lading atau Container">
+    <button onclick="searchShipment()">Cari</button>
+</div>
+
+<div id="resultSection" style="display:none;">
+    <h3>Hasil Pencarian</h3>
+    <table>
+        <tr><th>Bill of Lading</th><td id="resBL"></td></tr>
+        <tr><th>Vessel / Voyage</th><td id="resVessel"></td></tr>
+        <tr><th>Estimate Time Arrival (ETA)</th><td id="resETA"></td></tr>
+        <tr><th>Port of Transit</th><td id="resPOT"></td></tr>
+        <tr><th>Connecting Vessel</th><td id="resConn"></td></tr>
+        <tr><th>Estimate Time Departure (ETD)</th><td id="resETD"></td></tr>
+        <tr><th>Estimate Time Arrival (ETA POD)</th><td id="resETAPod"></td></tr>
+        <tr><th>Port of Destination</th><td id="resPOD"></td></tr>
+        <tr><th>DO Release Date</th><td id="resDO"></td></tr>
+        <tr><th>Cargo Release Date</th><td id="resCargo"></td></tr>
+    </table>
+</div>
+
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, query, where, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
-      authDomain: "track-and-trace-ca19a.firebaseapp.com",
-      projectId: "track-and-trace-ca19a",
-      storageBucket: "track-and-trace-ca19a.appspot.com",
-      messagingSenderId: "264766950053",
-      appId: "1:264766950053:web:b871670f2ab2c10d0f1b4c"
+        apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
+        authDomain: "track-and-trace-ca19a.firebaseapp.com",
+        projectId: "track-and-trace-ca19a",
+        storageBucket: "track-and-trace-ca19a.appspot.com",
+        messagingSenderId: "264766950053",
+        appId: "1:264766950053:web:b871670f2ab2c10d0f1b4c"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    async function searchShipment() {
-      const searchValue = document.getElementById('searchInput').value.trim();
-      const resultsDiv = document.getElementById('results');
-      resultsDiv.innerHTML = "Mencari...";
+    window.searchShipment = async function() {
+        const searchValue = document.getElementById("searchInput").value.trim();
+        if (!searchValue) {
+            alert("Masukkan nomor Bill of Lading atau Container");
+            return;
+        }
 
-      const q = query(collection(db, "shipments"), where("billOfLading", "==", searchValue));
+        // Cari berdasarkan BL
+        let qBL = query(collection(db, "shipments"), where("billOfLading", "==", searchValue), limit(1));
+        let snapshotBL = await getDocs(qBL);
 
-      let found = false;
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        resultsDiv.innerHTML = `
-          <div class="shipment">
-            <strong>Bill of Lading:</strong> ${data.billOfLading} <br>
-            <strong>Vessel / Voyage:</strong> ${data.vesselVoyage} <br>
-            <strong>ETA:</strong> ${data.eta} <br>
-            <strong>Port of Transit:</strong> ${data.portTransit} <br>
-            <strong>Connecting Vessel:</strong> ${data.connectingVessel} <br>
-            <strong>ETD:</strong> ${data.etd} <br>
-            <strong>ETA POD:</strong> ${data.etaPod} <br>
-            <strong>Port of Destination:</strong> ${data.portDestination} <br>
-            <strong>DO Release Date:</strong> ${data.doReleaseDate || '-'} <br>
-            <strong>Cargo Release Date:</strong> ${data.cargoReleaseDate || '-'}
-          </div>
-        `;
-        found = true;
-      });
-
-      if (!found) resultsDiv.innerHTML = "Data tidak ditemukan.";
+        // Jika BL tidak ditemukan, coba cari berdasarkan container
+        if (snapshotBL.empty) {
+            let qCont = query(collection(db, "shipments"), where("containerNumber", "==", searchValue), limit(1));
+            let snapshotCont = await getDocs(qCont);
+            if (!snapshotCont.empty) {
+                showResult(snapshotCont.docs[0].data());
+                return;
+            }
+            alert("Data tidak ditemukan");
+            document.getElementById("resultSection").style.display = "none";
+        } else {
+            showResult(snapshotBL.docs[0].data());
+        }
     }
-    window.searchShipment = searchShipment;
-  </script>
+
+    function showResult(data) {
+        document.getElementById("resBL").innerText = data.billOfLading || "-";
+        document.getElementById("resVessel").innerText = data.vesselVoyage || "-";
+        document.getElementById("resETA").innerText = data.eta || "-";
+        document.getElementById("resPOT").innerText = data.portTransit || "-";
+        document.getElementById("resConn").innerText = data.connectingVessel || "-";
+        document.getElementById("resETD").innerText = data.etd || "-";
+        document.getElementById("resETAPod").innerText = data.etaPod || "-";
+        document.getElementById("resPOD").innerText = data.portDestination || "-";
+        document.getElementById("resDO").innerText = data.doReleaseDate || "-";
+        document.getElementById("resCargo").innerText = data.cargoReleaseDate || "-";
+        document.getElementById("resultSection").style.display = "block";
+    }
+</script>
+
 </body>
 </html>
