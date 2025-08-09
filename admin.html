@@ -1,162 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Admin Panel</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-<style>
-body {
-  font-family: 'Poppins', sans-serif;
-  background: #f0f2f5;
-  margin: 0;
-  padding: 20px;
-}
-h2 {
-  text-align: center;
-  color: #333;
-}
-table {
-  border-collapse: collapse;
-  width: 100%;
-  margin-top: 20px;
-}
-th, td {
-  padding: 10px;
-  text-align: left;
-}
-th {
-  background-color: #007BFF;
-  color: white;
-}
-td {
-  background-color: rgba(255,255,255,0.8);
-}
-tbody tr {
-  opacity: 0;
-  transform: translateY(10px);
-  animation: fadeRow 0.4s ease forwards;
-}
-tbody tr:hover {
-  transform: scale(1.01);
-  transition: transform 0.2s ease;
-}
-.editable:focus {
-  background-color: rgba(255, 255, 0, 0.3);
-  outline: none;
-}
-button {
-  margin: 5px 0;
-  padding: 8px 15px;
-  background-color: #007BFF;
-  border: none;
-  color: white;
-  border-radius: 5px;
-  cursor: pointer;
-}
-button:hover {
-  background-color: #0056b3;
-}
-@keyframes fadeRow {
-  to { opacity: 1; transform: translateY(0); }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Shipment Data</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: white;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #2196f3;
+      color: white;
+    }
+    td:nth-child(n+2) {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(3px);
+    }
+    button {
+      padding: 8px 12px;
+      border: none;
+      background: #2196f3;
+      color: white;
+      cursor: pointer;
+      border-radius: 4px;
+      margin: 5px 0;
+    }
+    button:hover {
+      background: #1976d2;
+    }
+    .btn-export {
+      background: #4caf50;
+    }
+    .btn-export:hover {
+      background: #388e3c;
+    }
+  </style>
 </head>
 <body>
-<h2>Admin Panel</h2>
-<button id="exportCSV">Export CSV</button>
-<button id="exportExcel">Export Excel</button>
-<table id="dataTable">
-  <thead>
-    <tr>
-      <th>Bill of Lading</th>
-      <th>Vessel/Voyage</th>
-      <th>ETA</th>
-      <th>Port Transit</th>
-      <th>Connecting Vessel</th>
-      <th>Port Destination</th>
-      <th>ETD</th>
-      <th>ETA POD</th>
-      <th>DO Release Date</th>
-      <th>Cargo Release Date</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+  <h1>Admin - Shipment Data</h1>
 
-const firebaseConfig = {
-  apiKey: "API_KEY",
-  authDomain: "AUTH_DOMAIN",
-  projectId: "PROJECT_ID",
-  storageBucket: "STORAGE_BUCKET",
-  messagingSenderId: "MSG_SENDER_ID",
-  appId: "APP_ID"
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+  <button id="exportExcel" class="btn-export">Export to Excel</button>
+  <button id="exportCSV" class="btn-export">Export to CSV</button>
 
-async function loadData() {
-  const tableBody = document.querySelector("#dataTable tbody");
-  tableBody.innerHTML = "";
-  const querySnapshot = await getDocs(collection(db, "shipments"));
-  querySnapshot.forEach((docSnap, index) => {
-    const data = docSnap.data();
-    const row = document.createElement("tr");
-    Object.keys(data).forEach((key) => {
-      const cell = document.createElement("td");
-      cell.contentEditable = true;
-      cell.classList.add("editable");
-      cell.innerText = data[key] || "";
-      row.appendChild(cell);
-    });
-    const actionCell = document.createElement("td");
-    const saveBtn = document.createElement("button");
-    saveBtn.innerText = "Save";
-    saveBtn.onclick = async () => {
-      const cells = row.querySelectorAll("td.editable");
-      const updatedData = {};
-      Object.keys(data).forEach((key, idx) => {
-        updatedData[key] = cells[idx].innerText;
-      });
-      await updateDoc(doc(db, "shipments", docSnap.id), updatedData);
-      alert("Data berhasil disimpan!");
+  <table id="shipmentTable">
+    <thead>
+      <tr>
+        <th>Bill of Lading</th>
+        <th>Vessel / Voyage</th>
+        <th>ETA</th>
+        <th>Port of Destination</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data akan dimuat dari Firebase -->
+    </tbody>
+  </table>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
+      authDomain: "track-and-trace-ca19a.firebaseapp.com",
+      projectId: "track-and-trace-ca19a",
+      storageBucket: "track-and-trace-ca19a.appspot.com",
+      messagingSenderId: "264766950053",
+      appId: "1:264766950053:web:b871670f2ab2c10d0f1b4c"
     };
-    actionCell.appendChild(saveBtn);
-    row.appendChild(actionCell);
-    row.style.animationDelay = `${index * 0.05}s`;
-    tableBody.appendChild(row);
-  });
-}
 
-function exportTableToCSV(filename) {
-  const rows = document.querySelectorAll("table tr");
-  const csv = [];
-  rows.forEach(row => {
-    const cols = row.querySelectorAll("td, th");
-    const rowData = [];
-    cols.forEach(col => rowData.push(`"${col.innerText}"`));
-    csv.push(rowData.join(","));
-  });
-  const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
-  const downloadLink = document.createElement("a");
-  downloadLink.download = filename;
-  downloadLink.href = window.URL.createObjectURL(csvFile);
-  downloadLink.click();
-}
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-document.getElementById("exportCSV").addEventListener("click", () => {
-  exportTableToCSV("shipments.csv");
-});
-document.getElementById("exportExcel").addEventListener("click", () => {
-  exportTableToCSV("shipments.xls");
-});
+    const tableBody = document.querySelector("#shipmentTable tbody");
 
-loadData();
-</script>
+    async function loadData() {
+      const querySnapshot = await getDocs(collection(db, "shipments"));
+      querySnapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td contenteditable="true" data-field="billOfLading" data-id="${docSnap.id}">${data.billOfLading || ""}</td>
+          <td contenteditable="true" data-field="vesselVoyage" data-id="${docSnap.id}">${data.vesselVoyage || ""}</td>
+          <td contenteditable="true" data-field="eta" data-id="${docSnap.id}">${data.eta || ""}</td>
+          <td contenteditable="true" data-field="portDestination" data-id="${docSnap.id}">${data.portDestination || ""}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    // Auto-save on blur with confirmation
+    tableBody.addEventListener("blur", async (e) => {
+      if (e.target.matches("[contenteditable]")) {
+        const newValue = e.target.textContent.trim();
+        const field = e.target.getAttribute("data-field");
+        const id = e.target.getAttribute("data-id");
+
+        if (confirm(`Simpan perubahan pada kolom "${field}"?`)) {
+          await updateDoc(doc(db, "shipments", id), {
+            [field]: newValue
+          });
+          alert("Perubahan disimpan!");
+        } else {
+          location.reload();
+        }
+      }
+    }, true);
+
+    // Export to Excel
+    document.getElementById("exportExcel").addEventListener("click", () => {
+      exportTableToExcel("shipmentTable", "shipment_data");
+    });
+
+    // Export to CSV
+    document.getElementById("exportCSV").addEventListener("click", () => {
+      exportTableToCSV("shipment_data.csv");
+    });
+
+    function exportTableToExcel(tableID, filename = "") {
+      const dataType = 'application/vnd.ms-excel';
+      const tableSelect = document.getElementById(tableID);
+      const tableHTML = tableSelect.outerHTML.replace(/ /g, '%20');
+      filename = filename ? filename + '.xls' : 'excel_data.xls';
+      const downloadLink = document.createElement("a");
+      document.body.appendChild(downloadLink);
+      downloadLink.href = 'data:' + dataType + ', ' + tableHTML;
+      downloadLink.download = filename;
+      downloadLink.click();
+    }
+
+    function exportTableToCSV(filename) {
+      const csv = [];
+      const rows = document.querySelectorAll("table tr");
+      for (let i = 0; i < rows.length; i++) {
+        const row = [], cols = rows[i].querySelectorAll("td, th");
+        for (let j = 0; j < cols.length; j++) {
+          row.push(cols[j].innerText);
+        }
+        csv.push(row.join(","));
+      }
+      const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
+      const downloadLink = document.createElement("a");
+      downloadLink.download = filename;
+      downloadLink.href = window.URL.createObjectURL(csvFile);
+      downloadLink.click();
+    }
+
+    loadData();
+  </script>
 </body>
 </html>
