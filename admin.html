@@ -1,90 +1,187 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Admin Panel - Shipment</title>
-  <style>
+<meta charset="UTF-8">
+<title>Admin Panel - Shipment Tracking</title>
+<style>
     body { font-family: Arial, sans-serif; margin: 20px; }
-    input, button { padding: 8px; margin: 5px 0; width: 100%; }
-    .section { border: 1px solid #ccc; padding: 10px; margin-top: 15px; }
-  </style>
+    h2 { color: #333; }
+    form { margin-bottom: 20px; }
+    label { display: block; margin-top: 8px; font-weight: bold; }
+    input { width: 100%; padding: 6px; margin-top: 3px; }
+    button { margin-top: 12px; padding: 8px 14px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+    th { background-color: #f2f2f2; cursor: pointer; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+</style>
 </head>
 <body>
-  <h2>Admin Panel</h2>
 
-  <div id="loginDiv" class="section">
-    <input type="email" id="email" placeholder="Email"><br>
-    <input type="password" id="password" placeholder="Password"><br>
+<h2>Admin Panel - Shipment Tracking</h2>
+<div id="loginSection">
+    <h3>Login</h3>
+    <input type="email" id="loginEmail" placeholder="Email">
+    <input type="password" id="loginPassword" placeholder="Password">
     <button onclick="login()">Login</button>
-  </div>
+</div>
 
-  <div id="adminDiv" class="section" style="display:none;">
-    <h3>Tambah Shipment</h3>
-    <input id="billOfLading" placeholder="Bill of Lading"><br>
-    <input id="vesselVoyage" placeholder="Vessel / Voyage"><br>
-    <input id="eta" type="date" placeholder="Estimate Time Arrival"><br>
-    <input id="portTransit" placeholder="Port of Transit"><br>
-    <input id="connectingVessel" placeholder="Connecting Vessel"><br>
-    <input id="etd" type="date" placeholder="Estimate Time Departure"><br>
-    <input id="etaPod" type="date" placeholder="Estimate Time Arrival at POD"><br>
-    <input id="portDestination" placeholder="Port of Destination"><br>
-    <input id="doReleaseDate" type="date" placeholder="DO Release Date"><br>
-    <input id="cargoReleaseDate" type="date" placeholder="Cargo Release Date"><br>
-    <button onclick="addShipment()">Simpan</button>
-  </div>
+<div id="adminSection" style="display:none;">
+    <button onclick="logout()">Logout</button>
+    <h3>Tambah Data Shipment</h3>
+    <form id="shipmentForm">
+        <label>Bill of Lading</label><input id="billOfLading" required>
+        <label>Vessel / Voyage</label><input id="vesselVoyage">
+        <label>Estimate Time Arrival (ETA)</label><input id="eta">
+        <label>Port of Transit (POT)</label><input id="portTransit">
+        <label>Connecting Vessel</label><input id="connectingVessel">
+        <label>Estimate Time Departure (ETD)</label><input id="etd">
+        <label>Estimate Time Arrival (ETA POD)</label><input id="etaPod">
+        <label>Port of Destination (POD)</label><input id="portDestination">
+        <label>DO Release Date</label><input id="doReleaseDate">
+        <label>Cargo Release Date</label><input id="cargoReleaseDate">
+        <button type="submit">Simpan Data</button>
+    </form>
 
-  <script type="module">
+    <h3>Data Shipment</h3>
+    <table id="shipmentsTable">
+        <thead>
+            <tr>
+                <th onclick="sortTable(0)">Bill of Lading</th>
+                <th>Vessel / Voyage</th>
+                <th onclick="sortTable(2)">ETA</th>
+                <th onclick="sortTable(3)">Port of Transit</th>
+                <th>Connecting Vessel</th>
+                <th>ETD</th>
+                <th>ETA POD</th>
+                <th onclick="sortTable(7)">Port of Destination</th>
+                <th>DO Release Date</th>
+                <th>Cargo Release Date</th>
+            </tr>
+        </thead>
+        <tbody id="shipmentsBody"></tbody>
+    </table>
+</div>
+
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
-      authDomain: "track-and-trace-ca19a.firebaseapp.com",
-      projectId: "track-and-trace-ca19a",
-      storageBucket: "track-and-trace-ca19a.appspot.com",
-      messagingSenderId: "264766950053",
-      appId: "1:264766950053:web:b871670f2ab2c10d0f1b4c"
+        apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
+        authDomain: "track-and-trace-ca19a.firebaseapp.com",
+        projectId: "track-and-trace-ca19a",
+        storageBucket: "track-and-trace-ca19a.appspot.com",
+        messagingSenderId: "264766950053",
+        appId: "1:264766950053:web:b871670f2ab2c10d0f1b4c"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    async function login() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        document.getElementById('loginDiv').style.display = 'none';
-        document.getElementById('adminDiv').style.display = 'block';
-      } catch (error) {
-        alert("Login gagal: " + error.message);
-      }
-    }
-
-    async function addShipment() {
-      try {
-        await addDoc(collection(db, "shipments"), {
-          billOfLading: document.getElementById('billOfLading').value,
-          vesselVoyage: document.getElementById('vesselVoyage').value,
-          eta: document.getElementById('eta').value,
-          portTransit: document.getElementById('portTransit').value,
-          connectingVessel: document.getElementById('connectingVessel').value,
-          etd: document.getElementById('etd').value,
-          etaPod: document.getElementById('etaPod').value,
-          portDestination: document.getElementById('portDestination').value,
-          doReleaseDate: document.getElementById('doReleaseDate').value,
-          cargoReleaseDate: document.getElementById('cargoReleaseDate').value
+    async function loadShipments() {
+        const q = query(collection(db, "shipments"), orderBy("billOfLading"));
+        const querySnapshot = await getDocs(q);
+        const tbody = document.getElementById("shipmentsBody");
+        tbody.innerHTML = "";
+        querySnapshot.forEach((doc) => {
+            const d = doc.data();
+            const row = `
+                <tr>
+                    <td>${d.billOfLading || "-"}</td>
+                    <td>${d.vesselVoyage || "-"}</td>
+                    <td>${d.eta || "-"}</td>
+                    <td>${d.portTransit || "-"}</td>
+                    <td>${d.connectingVessel || "-"}</td>
+                    <td>${d.etd || "-"}</td>
+                    <td>${d.etaPod || "-"}</td>
+                    <td>${d.portDestination || "-"}</td>
+                    <td>${d.doReleaseDate || "-"}</td>
+                    <td>${d.cargoReleaseDate || "-"}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
         });
-        alert("Shipment berhasil ditambahkan!");
-      } catch (error) {
-        alert("Gagal menambahkan: " + error.message);
-      }
     }
 
-    window.login = login;
-    window.addShipment = addShipment;
-  </script>
+    document.getElementById("shipmentForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        await addDoc(collection(db, "shipments"), {
+            billOfLading: document.getElementById("billOfLading").value,
+            vesselVoyage: document.getElementById("vesselVoyage").value,
+            eta: document.getElementById("eta").value,
+            portTransit: document.getElementById("portTransit").value,
+            connectingVessel: document.getElementById("connectingVessel").value,
+            etd: document.getElementById("etd").value,
+            etaPod: document.getElementById("etaPod").value,
+            portDestination: document.getElementById("portDestination").value,
+            doReleaseDate: document.getElementById("doReleaseDate").value,
+            cargoReleaseDate: document.getElementById("cargoReleaseDate").value
+        });
+        e.target.reset();
+        loadShipments();
+    });
+
+    window.login = async function() {
+        const email = document.getElementById("loginEmail").value;
+        const password = document.getElementById("loginPassword").value;
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch (err) {
+            alert("Login gagal: " + err.message);
+        }
+    }
+
+    window.logout = function() {
+        signOut(auth);
+    }
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            document.getElementById("loginSection").style.display = "none";
+            document.getElementById("adminSection").style.display = "block";
+            loadShipments();
+        } else {
+            document.getElementById("loginSection").style.display = "block";
+            document.getElementById("adminSection").style.display = "none";
+        }
+    });
+
+    window.sortTable = function(n) {
+        const table = document.getElementById("shipmentsTable");
+        let switching = true;
+        let dir = "asc";
+        let switchcount = 0;
+        while (switching) {
+            switching = false;
+            let rows = table.rows;
+            for (let i = 1; i < (rows.length - 1); i++) {
+                let shouldSwitch = false;
+                let x = rows[i].getElementsByTagName("TD")[n];
+                let y = rows[i + 1].getElementsByTagName("TD")[n];
+                if (dir === "asc" && x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                    shouldSwitch = true;
+                    break;
+                } else if (dir === "desc" && x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                    shouldSwitch = true;
+                    break;
+                }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+                switchcount++;
+            } else {
+                if (switchcount === 0 && dir === "asc") {
+                    dir = "desc";
+                    switching = true;
+                }
+            }
+        }
+    }
+</script>
+
 </body>
 </html>
