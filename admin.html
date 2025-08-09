@@ -47,7 +47,6 @@
       border-collapse: collapse;
       width: 100%;
       font-size: 14px;
-      background-color: rgba(40, 44, 52, 0.9); /* abu kebiruan gelap */
       border-radius: 8px;
       overflow: hidden;
     }
@@ -61,11 +60,11 @@
       color: #fff;
     }
     td {
-      background-color: rgba(255, 255, 255, 0.05);
-      color: #f5f5f5;
+      background-color: #dcdcdc; /* putih gelap */
+      color: #333;
     }
     tr:nth-child(even) td {
-      background-color: rgba(255, 255, 255, 0.08);
+      background-color: #c9c9c9; /* putih gelap sedikit beda */
     }
     button {
       padding: 8px 16px;
@@ -81,6 +80,12 @@
     button:hover {
       background-color: #e68900;
     }
+    .btn-export {
+      background-color: #4caf50;
+    }
+    .btn-export:hover {
+      background-color: #388e3c;
+    }
     .editable {
       background-color: #fff9e0;
       color: #333;
@@ -91,7 +96,6 @@
       color: #ff5722;
       font-weight: bold;
     }
-    /* Logo kanan */
     .logo {
       position: absolute;
       top: 20px;
@@ -134,6 +138,8 @@
   <div id="adminSection" style="display:none;">
     <button id="logoutBtn">Logout</button>
     <button id="addRowBtn">+ Tambah Data</button>
+    <button id="exportExcel" class="btn-export">Export to Excel</button>
+    <button id="exportCSV" class="btn-export">Export to CSV</button>
 
     <div id="filters">
       <input type="text" placeholder="Cari No BL, Vessel/Voyage, atau POD" id="mainSearch">
@@ -247,7 +253,6 @@
         loadShipments();
     });
 
-    // Filter tunggal untuk BL, Vessel/Voyage, POD
     document.getElementById("mainSearch").addEventListener("keyup", function () {
         const filter = this.value.toLowerCase();
         const rows = shipmentTableBody.getElementsByTagName("tr");
@@ -262,6 +267,46 @@
             }
         }
     });
+
+    // Export to Excel
+    document.getElementById("exportExcel").addEventListener("click", () => {
+        exportTableToExcel("shipmentTable", "shipment_data");
+    });
+
+    // Export to CSV
+    document.getElementById("exportCSV").addEventListener("click", () => {
+        exportTableToCSV("shipment_data.csv");
+    });
+
+    function exportTableToExcel(tableID, filename = "") {
+      const dataType = 'application/vnd.ms-excel';
+      const tableSelect = document.getElementById(tableID);
+      const tableHTML = tableSelect.outerHTML.replace(/ /g, '%20');
+      filename = filename ? filename + '.xls' : 'excel_data.xls';
+      const downloadLink = document.createElement("a");
+      document.body.appendChild(downloadLink);
+      downloadLink.href = 'data:' + dataType + ', ' + tableHTML;
+      downloadLink.download = filename;
+      downloadLink.click();
+    }
+
+    function exportTableToCSV(filename) {
+      const csv = [];
+      const rows = document.querySelectorAll("table tr");
+      for (let i = 0; i < rows.length; i++) {
+        const row = [], cols = rows[i].querySelectorAll("td, th");
+        for (let j = 0; j < cols.length; j++) {
+          row.push(cols[j].innerText);
+        }
+        csv.push(row.join(","));
+      }
+      const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
+      const downloadLink = document.createElement("a");
+      downloadLink.download = filename;
+      downloadLink.href = window.URL.createObjectURL(csvFile);
+      downloadLink.click();
+    }
+
 </script>
 </body>
 </html>
