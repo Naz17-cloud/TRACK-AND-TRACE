@@ -2,71 +2,68 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Admin Panel - Shipment Tracking</title>
+<title>Admin Shipment Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     h2 { color: #333; }
-    form { margin-bottom: 20px; }
-    label { display: block; margin-top: 8px; font-weight: bold; }
-    input { width: 100%; padding: 6px; margin-top: 3px; }
-    button { margin-top: 12px; padding: 8px 14px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; font-size: 14px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background-color: #f2f2f2; cursor: pointer; }
-    tr:nth-child(even) { background-color: #f9f9f9; }
+    tr:nth-child(even) { background-color: #fafafa; }
+    button { padding: 6px 12px; margin: 10px 0; }
+    .editable { background-color: #ffffe0; }
+    .delete-btn { cursor: pointer; color: red; font-weight: bold; }
+    @media (max-width: 768px) {
+        table, thead, tbody, th, td, tr { display: block; }
+        th { position: sticky; top: 0; background: #f2f2f2; }
+        td { border: none; position: relative; padding-left: 50%; }
+        td:before { 
+            position: absolute; 
+            top: 8px; left: 8px; 
+            white-space: nowrap; 
+            font-weight: bold;
+        }
+    }
 </style>
 </head>
 <body>
 
-<h2>Admin Panel - Shipment Tracking</h2>
+<h2>Admin Shipment Tracker</h2>
 <div id="loginSection">
-    <h3>Login</h3>
-    <input type="email" id="loginEmail" placeholder="Email">
-    <input type="password" id="loginPassword" placeholder="Password">
-    <button onclick="login()">Login</button>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn">Login</button>
 </div>
 
 <div id="adminSection" style="display:none;">
-    <button onclick="logout()">Logout</button>
-    <h3>Tambah Data Shipment</h3>
-    <form id="shipmentForm">
-        <label>Bill of Lading</label><input id="billOfLading" required>
-        <label>Vessel / Voyage</label><input id="vesselVoyage">
-        <label>Estimate Time Arrival (ETA)</label><input id="eta">
-        <label>Port of Transit (POT)</label><input id="portTransit">
-        <label>Connecting Vessel</label><input id="connectingVessel">
-        <label>Estimate Time Departure (ETD)</label><input id="etd">
-        <label>Estimate Time Arrival (ETA POD)</label><input id="etaPod">
-        <label>Port of Destination (POD)</label><input id="portDestination">
-        <label>DO Release Date</label><input id="doReleaseDate">
-        <label>Cargo Release Date</label><input id="cargoReleaseDate">
-        <button type="submit">Simpan Data</button>
-    </form>
-
-    <h3>Data Shipment</h3>
-    <table id="shipmentsTable">
+    <button id="logoutBtn">Logout</button>
+    <button id="addRowBtn">+ Tambah Data</button>
+    <table id="shipmentTable">
         <thead>
             <tr>
-                <th onclick="sortTable(0)">Bill of Lading</th>
-                <th>Vessel / Voyage</th>
-                <th onclick="sortTable(2)">ETA</th>
-                <th onclick="sortTable(3)">Port of Transit</th>
-                <th>Connecting Vessel</th>
-                <th>ETD</th>
-                <th>ETA POD</th>
-                <th onclick="sortTable(7)">Port of Destination</th>
-                <th>DO Release Date</th>
-                <th>Cargo Release Date</th>
+                <th data-field="billOfLading">Bill of Lading</th>
+                <th data-field="vesselVoyage">Vessel / Voyage</th>
+                <th data-field="eta">ETA</th>
+                <th data-field="portTransit">Port of Transit</th>
+                <th data-field="connectingVessel">Connecting Vessel</th>
+                <th data-field="etd">ETD</th>
+                <th data-field="etaPod">ETA POD</th>
+                <th data-field="portDestination">Port of Destination</th>
+                <th data-field="doReleaseDate">DO Release Date</th>
+                <th data-field="cargoReleaseDate">Cargo Release Date</th>
+                <th data-field="containerNumber">Container Number</th>
+                <th>Aksi</th>
             </tr>
         </thead>
-        <tbody id="shipmentsBody"></tbody>
+        <tbody></tbody>
     </table>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
@@ -81,79 +78,79 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    const loginSection = document.getElementById("loginSection");
+    const adminSection = document.getElementById("adminSection");
+    const shipmentTableBody = document.querySelector("#shipmentTable tbody");
+
+    document.getElementById("loginBtn").addEventListener("click", () => {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        signInWithEmailAndPassword(auth, email, password)
+            .catch(err => alert("Login gagal: " + err.message));
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+        signOut(auth);
+    });
+
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            loginSection.style.display = "none";
+            adminSection.style.display = "block";
+            loadShipments();
+        } else {
+            loginSection.style.display = "block";
+            adminSection.style.display = "none";
+        }
+    });
+
     async function loadShipments() {
-        const q = query(collection(db, "shipments"), orderBy("billOfLading"));
-        const querySnapshot = await getDocs(q);
-        const tbody = document.getElementById("shipmentsBody");
-        tbody.innerHTML = "";
-        querySnapshot.forEach((doc) => {
-            const d = doc.data();
-            const row = `
-                <tr>
-                    <td>${d.billOfLading || "-"}</td>
-                    <td>${d.vesselVoyage || "-"}</td>
-                    <td>${d.eta || "-"}</td>
-                    <td>${d.portTransit || "-"}</td>
-                    <td>${d.connectingVessel || "-"}</td>
-                    <td>${d.etd || "-"}</td>
-                    <td>${d.etaPod || "-"}</td>
-                    <td>${d.portDestination || "-"}</td>
-                    <td>${d.doReleaseDate || "-"}</td>
-                    <td>${d.cargoReleaseDate || "-"}</td>
-                </tr>
-            `;
-            tbody.innerHTML += row;
+        shipmentTableBody.innerHTML = "";
+        const querySnapshot = await getDocs(collection(db, "shipments"));
+        querySnapshot.forEach(docSnap => {
+            addRowToTable(docSnap.id, docSnap.data());
         });
     }
 
-    document.getElementById("shipmentForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        await addDoc(collection(db, "shipments"), {
-            billOfLading: document.getElementById("billOfLading").value,
-            vesselVoyage: document.getElementById("vesselVoyage").value,
-            eta: document.getElementById("eta").value,
-            portTransit: document.getElementById("portTransit").value,
-            connectingVessel: document.getElementById("connectingVessel").value,
-            etd: document.getElementById("etd").value,
-            etaPod: document.getElementById("etaPod").value,
-            portDestination: document.getElementById("portDestination").value,
-            doReleaseDate: document.getElementById("doReleaseDate").value,
-            cargoReleaseDate: document.getElementById("cargoReleaseDate").value
+    function addRowToTable(id, data) {
+        const tr = document.createElement("tr");
+        const fields = ["billOfLading","vesselVoyage","eta","portTransit","connectingVessel","etd","etaPod","portDestination","doReleaseDate","cargoReleaseDate","containerNumber"];
+        fields.forEach(field => {
+            const td = document.createElement("td");
+            td.textContent = data[field] || "";
+            td.contentEditable = true;
+            td.addEventListener("blur", async () => {
+                await updateDoc(doc(db, "shipments", id), { [field]: td.textContent });
+            });
+            tr.appendChild(td);
         });
-        e.target.reset();
+        const actionTd = document.createElement("td");
+        actionTd.innerHTML = `<span class="delete-btn">🗑</span>`;
+        actionTd.querySelector(".delete-btn").addEventListener("click", async () => {
+            if (confirm("Yakin hapus data ini?")) {
+                await deleteDoc(doc(db, "shipments", id));
+                loadShipments();
+            }
+        });
+        tr.appendChild(actionTd);
+        shipmentTableBody.appendChild(tr);
+    }
+
+    document.getElementById("addRowBtn").addEventListener("click", async () => {
+        const newDocRef = await addDoc(collection(db, "shipments"), {
+            billOfLading: "", vesselVoyage: "", eta: "", portTransit: "", connectingVessel: "",
+            etd: "", etaPod: "", portDestination: "", doReleaseDate: "", cargoReleaseDate: "", containerNumber: ""
+        });
         loadShipments();
     });
 
-    window.login = async function() {
-        const email = document.getElementById("loginEmail").value;
-        const password = document.getElementById("loginPassword").value;
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-        } catch (err) {
-            alert("Login gagal: " + err.message);
-        }
-    }
-
-    window.logout = function() {
-        signOut(auth);
-    }
-
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            document.getElementById("loginSection").style.display = "none";
-            document.getElementById("adminSection").style.display = "block";
-            loadShipments();
-        } else {
-            document.getElementById("loginSection").style.display = "block";
-            document.getElementById("adminSection").style.display = "none";
-        }
+    document.querySelectorAll("#shipmentTable th[data-field]").forEach(th => {
+        th.addEventListener("click", () => sortTable(th.cellIndex));
     });
 
-    window.sortTable = function(n) {
-        const table = document.getElementById("shipmentsTable");
-        let switching = true;
-        let dir = "asc";
-        let switchcount = 0;
+    function sortTable(n) {
+        let table = document.getElementById("shipmentTable");
+        let switching = true, dir = "asc", switchcount = 0;
         while (switching) {
             switching = false;
             let rows = table.rows;
@@ -161,10 +158,7 @@
                 let shouldSwitch = false;
                 let x = rows[i].getElementsByTagName("TD")[n];
                 let y = rows[i + 1].getElementsByTagName("TD")[n];
-                if (dir === "asc" && x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-                    shouldSwitch = true;
-                    break;
-                } else if (dir === "desc" && x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                if (dir === "asc" ? x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase() : x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
                     shouldSwitch = true;
                     break;
                 }
@@ -182,6 +176,5 @@
         }
     }
 </script>
-
 </body>
 </html>
