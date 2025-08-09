@@ -2,170 +2,266 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <title>Data Tracking System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin - Shipment Data</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Poppins', sans-serif;
-      margin: 0;
-      padding: 20px;
-      background: #f5f5f5;
+      margin: 20px;
+      background: url('background.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
     }
-    h1 {
+    .overlay {
+      background-color: rgba(0, 0, 0, 0.5);
+      min-height: 100vh;
+      padding: 30px;
+      border-radius: 8px;
+    }
+    h2 {
+      color: #ffcc80;
       text-align: center;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    .watermark {
+      text-align: center;
+      font-size: 12px;
+      opacity: 0.7;
       margin-bottom: 20px;
+    }
+    #filters {
+      max-width: 400px;
+      margin: 0 auto 15px;
+      text-align: center;
+    }
+    #filters input {
+      width: 100%;
+      padding: 8px;
+      border-radius: 4px;
+      border: none;
+      font-size: 14px;
     }
     table {
       border-collapse: collapse;
       width: 100%;
-      background: white;
+      font-size: 14px;
+      background-color: rgba(40, 44, 52, 0.9); /* abu kebiruan gelap */
+      border-radius: 8px;
+      overflow: hidden;
     }
     th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
+      padding: 10px;
       text-align: left;
     }
     th {
-      background-color: #2196f3;
-      color: white;
+      background-color: rgba(60, 120, 180, 0.9); /* biru teduh */
+      font-weight: 600;
+      color: #fff;
     }
-    td:nth-child(n+2) {
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(3px);
+    td {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: #f5f5f5;
+    }
+    tr:nth-child(even) td {
+      background-color: rgba(255, 255, 255, 0.08);
     }
     button {
-      padding: 8px 12px;
+      padding: 8px 16px;
+      margin: 10px 10px 20px 0;
       border: none;
-      background: #2196f3;
+      border-radius: 5px;
+      background-color: #ff9800;
       color: white;
+      font-weight: 600;
       cursor: pointer;
-      border-radius: 4px;
-      margin: 5px 0;
+      transition: background-color 0.3s ease;
     }
     button:hover {
-      background: #1976d2;
+      background-color: #e68900;
     }
-    .btn-export {
-      background: #4caf50;
+    .editable {
+      background-color: #fff9e0;
+      color: #333;
+      border-radius: 3px;
     }
-    .btn-export:hover {
-      background: #388e3c;
+    .delete-btn {
+      cursor: pointer;
+      color: #ff5722;
+      font-weight: bold;
+    }
+    /* Logo kanan */
+    .logo {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 100px;
+      height: auto;
+      animation: logoAnim 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes logoAnim {
+      0% { transform: scale(1) rotate(0deg); opacity: 0.8; }
+      50% { transform: scale(1.05) rotate(2deg); opacity: 1; }
+      100% { transform: scale(1) rotate(-2deg); opacity: 0.9; }
+    }
+    @media (max-width: 768px) {
+      table, thead, tbody, th, td, tr { display: block; }
+      th { position: sticky; top: 0; background: rgba(60, 120, 180, 0.9); }
+      td { border: none; position: relative; padding-left: 50%; }
+      td:before { 
+          position: absolute; 
+          top: 8px; left: 8px; 
+          white-space: nowrap; 
+          font-weight: bold;
+          color: #ffcc80;
+      }
     }
   </style>
 </head>
 <body>
 
-  <h1>Admin - Shipment Data</h1>
+<div class="overlay">
+  <h2>Data Tracking System</h2>
+  <div class="watermark">by nazrll</div>
 
-  <button id="exportExcel" class="btn-export">Export to Excel</button>
-  <button id="exportCSV" class="btn-export">Export to CSV</button>
+  <div id="loginSection">
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn">Login</button>
+  </div>
 
-  <table id="shipmentTable">
-    <thead>
-      <tr>
-        <th>Bill of Lading</th>
-        <th>Vessel / Voyage</th>
-        <th>ETA</th>
-        <th>Port of Destination</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Data akan dimuat dari Firebase -->
-    </tbody>
-  </table>
+  <div id="adminSection" style="display:none;">
+    <button id="logoutBtn">Logout</button>
+    <button id="addRowBtn">+ Tambah Data</button>
 
-  <script type="module">
+    <div id="filters">
+      <input type="text" placeholder="Cari No BL, Vessel/Voyage, atau POD" id="mainSearch">
+    </div>
+
+    <table id="shipmentTable">
+      <thead>
+        <tr>
+          <th>Bill of Lading</th>
+          <th>Vessel / Voyage</th>
+          <th>ETA</th>
+          <th>Port of Transit</th>
+          <th>Connecting Vessel</th>
+          <th>ETD</th>
+          <th>ETA POD</th>
+          <th>Port of Destination</th>
+          <th>DO Release Date</th>
+          <th>Cargo Release Date</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<img src="logo.png" alt="Logo" class="logo">
+
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
-      authDomain: "track-and-trace-ca19a.firebaseapp.com",
-      projectId: "track-and-trace-ca19a",
-      storageBucket: "track-and-trace-ca19a.appspot.com",
-      messagingSenderId: "264766950053",
-      appId: "1:264766950053:web:b871670f2ab2c10d0f1b4c"
+        apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
+        authDomain: "track-and-trace-ca19a.firebaseapp.com",
+        projectId: "track-and-trace-ca19a",
+        storageBucket: "track-and-trace-ca19a.appspot.com",
+        messagingSenderId: "264766950053",
+        appId: "1:264766950053:web:b871670f2ab2c10d0f1b4c"
     };
 
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const tableBody = document.querySelector("#shipmentTable tbody");
+    const loginSection = document.getElementById("loginSection");
+    const adminSection = document.getElementById("adminSection");
+    const shipmentTableBody = document.querySelector("#shipmentTable tbody");
 
-    async function loadData() {
-      const querySnapshot = await getDocs(collection(db, "shipments"));
-      querySnapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td contenteditable="true" data-field="billOfLading" data-id="${docSnap.id}">${data.billOfLading || ""}</td>
-          <td contenteditable="true" data-field="vesselVoyage" data-id="${docSnap.id}">${data.vesselVoyage || ""}</td>
-          <td contenteditable="true" data-field="eta" data-id="${docSnap.id}">${data.eta || ""}</td>
-          <td contenteditable="true" data-field="portDestination" data-id="${docSnap.id}">${data.portDestination || ""}</td>
-        `;
-        tableBody.appendChild(tr);
-      });
-    }
+    document.getElementById("loginBtn").addEventListener("click", () => {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        signInWithEmailAndPassword(auth, email, password)
+            .catch(err => alert("Login gagal: " + err.message));
+    });
 
-    // Auto-save on blur with confirmation
-    tableBody.addEventListener("blur", async (e) => {
-      if (e.target.matches("[contenteditable]")) {
-        const newValue = e.target.textContent.trim();
-        const field = e.target.getAttribute("data-field");
-        const id = e.target.getAttribute("data-id");
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+        signOut(auth);
+    });
 
-        if (confirm(`Simpan perubahan pada kolom "${field}"?`)) {
-          await updateDoc(doc(db, "shipments", id), {
-            [field]: newValue
-          });
-          alert("Perubahan disimpan!");
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            loginSection.style.display = "none";
+            adminSection.style.display = "block";
+            loadShipments();
         } else {
-          location.reload();
+            loginSection.style.display = "block";
+            adminSection.style.display = "none";
         }
-      }
-    }, true);
-
-    // Export to Excel
-    document.getElementById("exportExcel").addEventListener("click", () => {
-      exportTableToExcel("shipmentTable", "shipment_data");
     });
 
-    // Export to CSV
-    document.getElementById("exportCSV").addEventListener("click", () => {
-      exportTableToCSV("shipment_data.csv");
+    async function loadShipments() {
+        shipmentTableBody.innerHTML = "";
+        const querySnapshot = await getDocs(collection(db, "shipments"));
+        querySnapshot.forEach(docSnap => {
+            addRowToTable(docSnap.id, docSnap.data());
+        });
+    }
+
+    function addRowToTable(id, data) {
+        const tr = document.createElement("tr");
+        const fields = [
+            "billOfLading","vesselVoyage","eta","portTransit","connectingVessel",
+            "etd","etaPod","portDestination","doReleaseDate","cargoReleaseDate"
+        ];
+        fields.forEach(field => {
+            const td = document.createElement("td");
+            td.textContent = data[field] || "";
+            td.contentEditable = true;
+            td.classList.add("editable");
+            tr.appendChild(td);
+        });
+        const actionTd = document.createElement("td");
+        actionTd.innerHTML = `<span class="delete-btn">🗑</span>`;
+        actionTd.querySelector(".delete-btn").addEventListener("click", async () => {
+            if (confirm("Yakin hapus data ini?")) {
+                await deleteDoc(doc(db, "shipments", id));
+                loadShipments();
+            }
+        });
+        tr.appendChild(actionTd);
+        shipmentTableBody.appendChild(tr);
+    }
+
+    document.getElementById("addRowBtn").addEventListener("click", async () => {
+        await addDoc(collection(db, "shipments"), {
+            billOfLading: "", vesselVoyage: "", eta: "", portTransit: "", connectingVessel: "",
+            etd: "", etaPod: "", portDestination: "", doReleaseDate: "", cargoReleaseDate: ""
+        });
+        loadShipments();
     });
 
-    function exportTableToExcel(tableID, filename = "") {
-      const dataType = 'application/vnd.ms-excel';
-      const tableSelect = document.getElementById(tableID);
-      const tableHTML = tableSelect.outerHTML.replace(/ /g, '%20');
-      filename = filename ? filename + '.xls' : 'excel_data.xls';
-      const downloadLink = document.createElement("a");
-      document.body.appendChild(downloadLink);
-      downloadLink.href = 'data:' + dataType + ', ' + tableHTML;
-      downloadLink.download = filename;
-      downloadLink.click();
-    }
-
-    function exportTableToCSV(filename) {
-      const csv = [];
-      const rows = document.querySelectorAll("table tr");
-      for (let i = 0; i < rows.length; i++) {
-        const row = [], cols = rows[i].querySelectorAll("td, th");
-        for (let j = 0; j < cols.length; j++) {
-          row.push(cols[j].innerText);
+    // Filter tunggal untuk BL, Vessel/Voyage, POD
+    document.getElementById("mainSearch").addEventListener("keyup", function () {
+        const filter = this.value.toLowerCase();
+        const rows = shipmentTableBody.getElementsByTagName("tr");
+        for (let row of rows) {
+            const bl = row.cells[0].textContent.toLowerCase();
+            const vessel = row.cells[1].textContent.toLowerCase();
+            const pod = row.cells[7].textContent.toLowerCase();
+            if (bl.includes(filter) || vessel.includes(filter) || pod.includes(filter)) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
         }
-        csv.push(row.join(","));
-      }
-      const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
-      const downloadLink = document.createElement("a");
-      downloadLink.download = filename;
-      downloadLink.href = window.URL.createObjectURL(csvFile);
-      downloadLink.click();
-    }
-
-    loadData();
-  </script>
+    });
+</script>
 </body>
 </html>
