@@ -5,29 +5,32 @@
   <title>Admin Panel - Shipment</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
-    input, button { padding: 8px; margin: 5px 0; }
-    .shipment { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+    input, button { padding: 8px; margin: 5px 0; width: 100%; }
+    .section { border: 1px solid #ccc; padding: 10px; margin-top: 15px; }
   </style>
 </head>
 <body>
   <h2>Admin Panel</h2>
 
-  <div id="loginDiv">
+  <div id="loginDiv" class="section">
     <input type="email" id="email" placeholder="Email"><br>
     <input type="password" id="password" placeholder="Password"><br>
     <button onclick="login()">Login</button>
   </div>
 
-  <div id="adminDiv" style="display:none;">
+  <div id="adminDiv" class="section" style="display:none;">
     <h3>Tambah Shipment</h3>
-    <input id="blNumber" placeholder="BL Number"><br>
-    <input id="containerNumber" placeholder="Container Number"><br>
-    <input id="type" placeholder="Type (FCL/LCL)"><br>
-    <input id="origin" placeholder="Origin"><br>
-    <input id="destination" placeholder="Destination"><br>
-    <input id="status" placeholder="Status"><br>
+    <input id="billOfLading" placeholder="Bill of Lading"><br>
+    <input id="vesselVoyage" placeholder="Vessel / Voyage"><br>
+    <input id="eta" type="date" placeholder="Estimate Time Arrival"><br>
+    <input id="portTransit" placeholder="Port of Transit"><br>
+    <input id="connectingVessel" placeholder="Connecting Vessel"><br>
+    <input id="etd" type="date" placeholder="Estimate Time Departure"><br>
+    <input id="etaPod" type="date" placeholder="Estimate Time Arrival at POD"><br>
+    <input id="portDestination" placeholder="Port of Destination"><br>
+    <input id="doReleaseDate" type="date" placeholder="DO Release Date"><br>
+    <input id="cargoReleaseDate" type="date" placeholder="Cargo Release Date"><br>
     <button onclick="addShipment()">Simpan</button>
-    <div id="adminResults"></div>
   </div>
 
   <script type="module">
@@ -63,12 +66,16 @@
     async function addShipment() {
       try {
         await addDoc(collection(db, "shipments"), {
-          blNumber: document.getElementById('blNumber').value,
-          containerNumber: document.getElementById('containerNumber').value,
-          type: document.getElementById('type').value,
-          origin: document.getElementById('origin').value,
-          destination: document.getElementById('destination').value,
-          status: document.getElementById('status').value
+          billOfLading: document.getElementById('billOfLading').value,
+          vesselVoyage: document.getElementById('vesselVoyage').value,
+          eta: document.getElementById('eta').value,
+          portTransit: document.getElementById('portTransit').value,
+          connectingVessel: document.getElementById('connectingVessel').value,
+          etd: document.getElementById('etd').value,
+          etaPod: document.getElementById('etaPod').value,
+          portDestination: document.getElementById('portDestination').value,
+          doReleaseDate: document.getElementById('doReleaseDate').value,
+          cargoReleaseDate: document.getElementById('cargoReleaseDate').value
         });
         alert("Shipment berhasil ditambahkan!");
       } catch (error) {
