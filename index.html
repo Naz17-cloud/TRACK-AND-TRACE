@@ -1,139 +1,145 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Shipment Tracking</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-<style>
-  body {
-    margin: 0;
-    font-family: 'Poppins', sans-serif;
-    background: url('background.jpg') no-repeat center center fixed;
-    background-size: cover;
-    color: #fff;
-  }
-  .overlay {
-    background-color: rgba(0, 0, 0, 0.5);
-    min-height: 100vh;
-    padding: 30px;
-  }
-  .search-box {
-    max-width: 500px;
-    margin: 0 auto;
-    text-align: center;
-  }
-  .search-box input {
-    padding: 10px;
-    width: 70%;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-  }
-  .search-box button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    background-color: #ff9800;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-    margin-left: 5px;
-  }
-  .result-box {
-    max-width: 800px;
-    margin: 20px auto 0;
-    background-color: rgba(255, 255, 255, 0.1);
-    padding: 20px;
-    border-radius: 8px;
-    display: none;
-    animation: fadeIn 0.5s ease-in-out;
-  }
-  .result-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px 40px;
-  }
-  .label {
-    font-weight: 600;
-  }
-  .value {
-    font-weight: 400;
-  }
-  .not-found {
-    text-align: center;
-    font-size: 18px;
-    font-weight: 600;
-    padding: 20px;
-  }
-  @keyframes fadeIn {
-    from {opacity: 0;}
-    to {opacity: 1;}
-  }
-  @media(max-width: 600px) {
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shipment Tracking</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: url('background.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+    }
+    .overlay {
+      background-color: rgba(0, 0, 0, 0.5);
+      min-height: 100vh;
+      padding: 30px;
+    }
+    .search-box {
+      max-width: 500px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .search-box input {
+      padding: 10px;
+      width: 60%;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    .search-box button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      background-color: #ff9800;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      margin-left: 5px;
+    }
+    .result-box {
+      max-width: 800px;
+      margin: 20px auto 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 8px;
+      display: none;
+      animation: fadeIn 0.5s ease-in-out;
+    }
     .result-grid {
-      grid-template-columns: 1fr;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 40px;
     }
-  }
-</style>
-<script type="module">
-  // Firebase imports
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-  import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-
-  // Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
-    authDomain: "track-and-trace-ca19a.firebaseapp.com",
-    projectId: "track-and-trace-ca19a",
-    storageBucket: "track-and-trace-ca19a.firebasestorage.app",
-    messagingSenderId: "264766950053",
-    appId: "1:264766950053:web:b871670f2ab2c10d0f1b4c",
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  document.getElementById('searchBtn').addEventListener('click', async () => {
-    const blNumber = document.getElementById('blInput').value.trim();
-    const resultBox = document.getElementById('resultBox');
-    resultBox.innerHTML = '';
-    resultBox.style.display = 'block';
-
-    if (!blNumber) {
-      resultBox.innerHTML = '<div class="not-found">No Details Found</div>';
-      return;
+    .label {
+      font-weight: 600;
     }
-
-    const q = query(collection(db, "shipments"), where("billOfLading", "==", blNumber));
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.empty) {
-      resultBox.innerHTML = '<div class="not-found">No Details Found</div>';
-      return;
+    .value {
+      font-weight: 400;
     }
+    .not-found {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      padding: 20px;
+    }
+    @keyframes fadeIn {
+      from {opacity: 0;}
+      to {opacity: 1;}
+    }
+    @media(max-width: 600px) {
+      .result-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    /* Logo styles */
+    .logo {
+      position: absolute;
+      top: 20px;
+    }
+    #logo-left {
+      left: 20px;
+    }
+    #logo-right {
+      right: 20px;
+    }
+  </style>
+  <script type="module">
+    // Firebase imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      resultBox.innerHTML = `
-        <div class="result-grid">
-          <div><span class="label">Bill Of Lading:</span> <span class="value">${data.billOfLading || ''}</span></div>
-          <div><span class="label">Vessel/Voyage:</span> <span class="value">${data.vesselVoyage || ''}</span></div>
-          <div><span class="label">ETA:</span> <span class="value">${data.eta || ''}</span></div>
-          <div><span class="label">Port Of Transit:</span> <span class="value">${data.portTransit || ''}</span></div>
-          <div><span class="label">Connecting Vessel:</span> <span class="value">${data.connectingVessel || ''}</span></div>
-          <div><span class="label">Port Of Destination:</span> <span class="value">${data.portDestination || ''}</span></div>
-          <div><span class="label">ETD:</span> <span class="value">${data.etd || ''}</span></div>
-          <div><span class="label">ETA:</span> <span class="value">${data.etaPod || ''}</span></div>
-          <div><span class="label">DO Release Date:</span> <span class="value">${data.doReleaseDate || ''}</span></div>
-          <div><span class="label">Cargo Release Date:</span> <span class="value">${data.cargoReleaseDate || ''}</span></div>
-        </div>
-      `;
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
+      authDomain: "track-and-trace-ca19a.firebaseapp.com",
+      projectId: "track-and-trace-ca19a",
+      storageBucket: "track-and-trace-ca19a.appspot.com",
+      messagingSenderId: "264766950053",
+      appId: "1:264766950053:web:b871670f2ab2c10d0f1b4c",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+      const blNumber = document.getElementById('blInput').value.trim();
+      const resultBox = document.getElementById('resultBox');
+      resultBox.innerHTML = '';
+      resultBox.style.display = 'block';
+
+      const querySnapshot = await getDocs(query(collection(db, "shipments"), where("billOfLading", "==", blNumber)));
+
+      if (querySnapshot.empty) {
+        resultBox.innerHTML = '<div class="not-found">No Details Found</div>';
+        return;
+      }
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        resultBox.innerHTML += `
+          <div class="result-grid">
+            <div><span class="label">Bill Of Lading:</span> <span class="value">${data.billOfLading || ''}</span></div>
+            <div><span class="label">Vessel/Voyage:</span> <span class="value">${data.vesselVoyage || ''}</span></div>
+            <div><span class="label">ETA:</span> <span class="value">${data.eta || ''}</span></div>
+            <div><span class="label">Port Of Transit:</span> <span class="value">${data.portTransit || ''}</span></div>
+            <div><span class="label">Connecting Vessel:</span> <span class="value">${data.connectingVessel || ''}</span></div>
+            <div><span class="label">Port Of Destination:</span> <span class="value">${data.portDestination || ''}</span></div>
+            <div><span class="label">ETD:</span> <span class="value">${data.etd || ''}</span></div>
+            <div><span class="label">ETA:</span> <span class="value">${data.etaPod || ''}</span></div>
+            <div><span class="label">DO Release Date:</span> <span class="value">${data.doReleaseDate || ''}</span></div>
+            <div><span class="label">Cargo Release Date:</span> <span class="value">${data.cargoReleaseDate || ''}</span></div>
+          </div>
+        `;
+      });
     });
-  });
-</script>
+  </script>
 </head>
 <body>
+  <img src="logo.png" alt="Logo" class="logo" id="logo-left">
   <div class="overlay">
     <div class="search-box">
       <input type="text" id="blInput" placeholder="Enter Bill of Lading Number">
@@ -141,5 +147,6 @@
     </div>
     <div id="resultBox" class="result-box"></div>
   </div>
+  <img src="logo.png" alt="Logo" class="logo" id="logo-right">
 </body>
 </html>
