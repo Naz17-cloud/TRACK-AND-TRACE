@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Shipment Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h2 { color: #333; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; font-size: 14px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; cursor: pointer; }
+    tr:nth-child(even) { background-color: #fafafa; }
+    button { padding: 6px 12px; margin: 10px 0; }
+    .editable { background-color: #ffffe0; }
+    .delete-btn { cursor: pointer; color: red; font-weight: bold; }
+    @media (max-width: 768px) {
+        table, thead, tbody, th, td, tr { display: block; }
+        th { position: sticky; top: 0; background: #f2f2f2; }
+        td { border: none; position: relative; padding-left: 50%; }
+        td:before { 
+            position: absolute; 
+            top: 8px; left: 8px; 
+            white-space: nowrap; 
+            font-weight: bold;
+        }
+    }
+</style>
+</head>
+<body>
+
+<h2>Admin Shipment Tracker</h2>
+<div id="loginSection">
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn">Login</button>
+</div>
+
+<div id="adminSection" style="display:none;">
+    <button id="logoutBtn">Logout</button>
+    <button id="addRowBtn">+ Tambah Data</button>
+    <table id="shipmentTable">
+        <thead>
+            <tr>
+                <th data-field="billOfLading">Bill of Lading</th>
+                <th data-field="vesselVoyage">Vessel / Voyage</th>
+                <th data-field="eta">ETA</th>
+                <th data-field="portTransit">Port of Transit</th>
+                <th data-field="connectingVessel">Connecting Vessel</th>
+                <th data-field="etd">ETD</th>
+                <th data-field="etaPod">ETA POD</th>
+                <th data-field="portDestination">Port of Destination</th>
+                <th data-field="doReleaseDate">DO Release Date</th>
+                <th data-field="cargoReleaseDate">Cargo Release Date</th>
+                <th data-field="containerNumber">Container Number</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
+        authDomain: "track-and-trace-ca19a.firebaseapp.com",
+        projectId: "track-and-trace-ca19a",
+        storageBucket: "track-and-trace-ca19a.appspot.com",
+        messagingSenderId: "264766950053",
+        appId: "1:264766950053:web:b871670f2ab2c10d0f1b4c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const loginSection = document.getElementById("loginSection");
+    const adminSection = document.getElementById("adminSection");
+    const shipmentTableBody = document.querySelector("#shipmentTable tbody");
+
+    document.getElementById("loginBtn").addEventListener("click", () => {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        signInWithEmailAndPassword(auth, email, password)
+            .catch(err => alert("Login gagal: " + err.message));
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+        signOut(auth);
+    });
+
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            loginSection.style.display = "none";
+            adminSection.style.display = "block";
+            loadShipments();
+        } else {
+            loginSection.style.display = "block";
+            adminSection.style.display = "none";
+        }
+    });
+
+    async function loadShipments() {
+        shipmentTableBody.innerHTML = "";
+        const querySnapshot = await getDocs(collection(db, "shipments"));
+        querySnapshot.forEach(docSnap => {
+            addRowToTable(docSnap.id, docSnap.data());
+        });
+    }
+
+    function addRowToTable(id, data) {
+        const tr = document.createElement("tr");
+        const fields = ["billOfLading","vesselVoyage","eta","portTransit","connectingVessel","etd","etaPod","portDestination","doReleaseDate","cargoReleaseDate","containerNumber"];
+        fields.forEach(field => {
+            const td = document.createElement("td");
+            td.textContent = data[field] || "";
+            td.contentEditable = true;
+            td.addEventListener("blur", async () => {
+                await updateDoc(doc(db, "shipments", id), { [field]: td.textContent });
+            });
+            tr.appendChild(td);
+        });
+        const actionTd = document.createElement("td");
+        actionTd.innerHTML = `<span class="delete-btn">🗑</span>`;
+        actionTd.querySelector(".delete-btn").addEventListener("click", async () => {
+            if (confirm("Yakin hapus data ini?")) {
+                await deleteDoc(doc(db, "shipments", id));
+                loadShipments();
+            }
+        });
+        tr.appendChild(actionTd);
+        shipmentTableBody.appendChild(tr);
+    }
+
+    document.getElementById("addRowBtn").addEventListener("click", async () => {
+        const newDocRef = await addDoc(collection(db, "shipments"), {
+            billOfLading: "", vesselVoyage: "", eta: "", portTransit: "", connectingVessel: "",
+            etd: "", etaPod: "", portDestination: "", doReleaseDate: "", cargoReleaseDate: "", containerNumber: ""
+        });
+        loadShipments();
+    });
+
+    document.querySelectorAll("#shipmentTable th[data-field]").forEach(th => {
+        th.addEventListener("click", () => sortTable(th.cellIndex));
+    });
+
+    function sortTable(n) {
+        let table = document.getElementById("shipmentTable");
+        let switching = true, dir = "asc", switchcount = 0;
+        while (switching) {
+            switching = false;
+            let rows = table.rows;
+            for (let i = 1; i < (rows.length - 1); i++) {
+                let shouldSwitch = false;
+                let x = rows[i].getElementsByTagName("TD")[n];
+                let y = rows[i + 1].getElementsByTagName("TD")[n];
+                if (dir === "asc" ? x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase() : x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                    shouldSwitch = true;
+                    break;
+                }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+                switchcount++;
+            } else {
+                if (switchcount === 0 && dir === "asc") {
+                    dir = "desc";
+                    switching = true;
+                }
+            }
+        }
+    }
+</script>
+</body>
+</html>
