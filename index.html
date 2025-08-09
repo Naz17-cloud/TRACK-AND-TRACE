@@ -22,6 +22,7 @@
       max-width: 500px;
       margin: 0 auto;
       text-align: center;
+      padding-top: 80px; /* beri jarak dari logo kanan */
     }
     .search-box input {
       padding: 10px;
@@ -75,24 +76,27 @@
         grid-template-columns: 1fr;
       }
     }
-    /* Logo styles */
+
+    /* Logo kanan */
     .logo {
       position: absolute;
       top: 20px;
-    }
-    #logo-left {
-      left: 20px;
-    }
-    #logo-right {
       right: 20px;
+      width: 100px; /* ukuran diperkecil */
+      height: auto;
+      animation: logoAnim 1.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes logoAnim {
+      0% { transform: scale(1) rotate(0deg); opacity: 0.8; }
+      50% { transform: scale(1.05) rotate(2deg); opacity: 1; }
+      100% { transform: scale(1) rotate(-2deg); opacity: 0.9; }
     }
   </style>
   <script type="module">
-    // Firebase imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
     import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
       authDomain: "track-and-trace-ca19a.firebaseapp.com",
@@ -139,7 +143,6 @@
   </script>
 </head>
 <body>
-  <img src="logo.png" alt="Logo" class="logo" id="logo-left">
   <div class="overlay">
     <div class="search-box">
       <input type="text" id="blInput" placeholder="Enter Bill of Lading Number">
@@ -147,6 +150,6 @@
     </div>
     <div id="resultBox" class="result-box"></div>
   </div>
-  <img src="logo.png" alt="Logo" class="logo" id="logo-right">
+  <img src="logo.png" alt="Logo" class="logo">
 </body>
 </html>
