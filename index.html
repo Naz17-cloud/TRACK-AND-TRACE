@@ -11,7 +11,7 @@
 </head>
 <body>
   <h2>Tracking Shipment</h2>
-  <input type="text" id="searchInput" placeholder="Masukkan Nomor BL atau Container">
+  <input type="text" id="searchInput" placeholder="Masukkan Nomor BL">
   <button onclick="searchShipment()">Cari</button>
   <div id="results"></div>
 
@@ -36,27 +36,29 @@
       const resultsDiv = document.getElementById('results');
       resultsDiv.innerHTML = "Mencari...";
 
-      const q1 = query(collection(db, "shipments"), where("blNumber", "==", searchValue));
-      const q2 = query(collection(db, "shipments"), where("containerNumber", "==", searchValue));
+      const q = query(collection(db, "shipments"), where("billOfLading", "==", searchValue));
 
       let found = false;
-      for (const q of [q1, q2]) {
-        const querySnapshot = await getDocs(q);
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          resultsDiv.innerHTML = `
-            <div class="shipment">
-              <strong>BL:</strong> ${data.blNumber} <br>
-              <strong>Container:</strong> ${data.containerNumber} <br>
-              <strong>Type:</strong> ${data.type} <br>
-              <strong>Origin:</strong> ${data.origin} <br>
-              <strong>Destination:</strong> ${data.destination} <br>
-              <strong>Status:</strong> ${data.status || 'N/A'}
-            </div>
-          `;
-          found = true;
-        });
-      }
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        resultsDiv.innerHTML = `
+          <div class="shipment">
+            <strong>Bill of Lading:</strong> ${data.billOfLading} <br>
+            <strong>Vessel / Voyage:</strong> ${data.vesselVoyage} <br>
+            <strong>ETA:</strong> ${data.eta} <br>
+            <strong>Port of Transit:</strong> ${data.portTransit} <br>
+            <strong>Connecting Vessel:</strong> ${data.connectingVessel} <br>
+            <strong>ETD:</strong> ${data.etd} <br>
+            <strong>ETA POD:</strong> ${data.etaPod} <br>
+            <strong>Port of Destination:</strong> ${data.portDestination} <br>
+            <strong>DO Release Date:</strong> ${data.doReleaseDate || '-'} <br>
+            <strong>Cargo Release Date:</strong> ${data.cargoReleaseDate || '-'}
+          </div>
+        `;
+        found = true;
+      });
+
       if (!found) resultsDiv.innerHTML = "Data tidak ditemukan.";
     }
     window.searchShipment = searchShipment;
