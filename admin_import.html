@@ -2,150 +2,169 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Data Tracking System - Import</title>
+<title>Data Import Tracking</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 <style>
-/* Style sama seperti admin export */
-body {
-  font-family: 'Poppins', sans-serif;
-  margin: 20px;
-  background: url('background.jpg') no-repeat center center fixed;
-  background-size: cover;
-  color: #fff;
-}
-.overlay {
-  background-color: rgba(0, 0, 0, 0.5);
-  min-height: 100vh;
-  padding: 30px;
-  border-radius: 8px;
-}
-h2 {
-  color: #ffcc80;
-  text-align: center;
-  margin-bottom: 5px;
-  font-weight: 600;
-}
-.watermark {
-  text-align: center;
-  font-size: 12px;
-  opacity: 0.7;
-  margin-bottom: 20px;
-}
-#filters {
-  max-width: 600px;
-  margin: 0 auto 15px;
-  text-align: center;
-}
-#filters input {
-  width: 100%;
-  padding: 8px;
-  border-radius: 4px;
-  border: none;
-  font-size: 14px;
-  margin-bottom: 10px;
-}
-table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 14px;
-  border-radius: 8px;
-  overflow: hidden;
-}
-th, td {
-  padding: 10px;
-  text-align: left;
-}
-th {
-  background-color: rgba(60, 120, 180, 0.9);
-  font-weight: 600;
-  color: #fff;
-}
-td {
-  background-color: #dcdcdc;
-  color: #333;
-}
-tr:nth-child(even) td {
-  background-color: #c9c9c9;
-}
-button, .dropdown {
-  padding: 6px 12px;
-  margin: 5px;
-  border: none;
-  border-radius: 5px;
-  background-color: #ff9800;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 12px;
-}
-button:hover, .dropdown:hover {
-  background-color: #e68900;
-}
-.dropdown-content {
-  display: none;
-  position: absolute;
-  background-color: #f9f9f9;
-  min-width: 150px;
-  z-index: 1;
-  border-radius: 4px;
-}
-.dropdown-content button {
-  background-color: transparent;
-  color: black;
-  width: 100%;
-  text-align: left;
-  margin: 0;
-}
-.dropdown-content button:hover {
-  background-color: #ddd;
-}
-.dropdown:hover .dropdown-content {
-  display: block;
-}
-.editable {
-  background-color: #fff9e0;
-  color: #333;
-  border-radius: 3px;
-}
-.delete-btn {
-  cursor: pointer;
-  color: #ff5722;
-  font-weight: bold;
-  margin-left: 8px;
-}
-.logo {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 100px;
-}
+  body {
+    font-family: 'Poppins', sans-serif;
+    margin: 20px;
+    background: url('background.jpg') no-repeat center center fixed;
+    background-size: cover;
+    color: #fff;
+  }
+  .overlay {
+    background-color: rgba(0,0,0,0.5);
+    min-height: 100vh;
+    padding: 30px;
+    border-radius: 8px;
+  }
+  h2 {
+    color: #ffcc80;
+    text-align: center;
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+  .watermark {
+    text-align: center;
+    font-size: 12px;
+    opacity: 0.7;
+    margin-bottom: 20px;
+  }
+  /* Buttons & dropdowns */
+  .btn {
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: none;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 3px;
+  }
+  .btn-primary { background-color: #ff9800; color: white; }
+  .btn-primary:hover { background-color: #e68900; }
+  .btn-success { background-color: #4caf50; color: white; }
+  .btn-success:hover { background-color: #388e3c; }
+  .dropdown {
+    position: relative;
+    display: inline-block;
+  }
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 120px;
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+    z-index: 1;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .dropdown-content button {
+    background: none;
+    color: #333;
+    padding: 8px 12px;
+    text-align: left;
+    border: none;
+    width: 100%;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .dropdown-content button:hover {
+    background-color: #eee;
+  }
+  .dropdown:hover .dropdown-content {
+    display: block;
+  }
+  /* Search */
+  #filters {
+    max-width: 500px;
+    margin: 0 auto 15px;
+    text-align: center;
+  }
+  #filters input {
+    width: 100%;
+    padding: 8px;
+    border-radius: 4px;
+    border: none;
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+  /* Table style */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.9);
+    color: #333;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  th {
+    background: linear-gradient(90deg, rgba(60,120,180,1) 0%, rgba(40,100,160,1) 100%);
+    color: white;
+    padding: 10px;
+    text-align: left;
+    font-size: 13px;
+  }
+  td {
+    padding: 8px;
+  }
+  tr:nth-child(even) td {
+    background-color: #f2f2f2;
+  }
+  tr:hover td {
+    background-color: #e6f2ff;
+  }
+  .editable {
+    background-color: #fff9e0;
+    border-radius: 3px;
+  }
+  .delete-btn {
+    cursor: pointer;
+    color: #ff5722;
+    font-weight: bold;
+    margin-left: 5px;
+  }
+  .logo {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 100px;
+    animation: logoAnim 1.5s ease-in-out infinite alternate;
+  }
+  @keyframes logoAnim {
+    0% { transform: scale(1) rotate(0deg); opacity: 0.8; }
+    50% { transform: scale(1.05) rotate(2deg); opacity: 1; }
+    100% { transform: scale(1) rotate(-2deg); opacity: 0.9; }
+  }
 </style>
 </head>
 <body>
-
 <div class="overlay">
-  <h2>Data Tracking System - Import</h2>
+  <h2>Data Import Tracking</h2>
   <div class="watermark">by nazrll</div>
 
   <div id="loginSection">
     <input type="email" id="email" placeholder="Email">
     <input type="password" id="password" placeholder="Password">
-    <button id="loginBtn">Login</button>
+    <button id="loginBtn" class="btn btn-primary">Login</button>
   </div>
 
   <div id="adminSection" style="display:none;">
-    <button id="logoutBtn">Logout</button>
-    <button id="addRowBtn">+ Tambah Data</button>
-
-    <div class="dropdown">Export Data
+    <button id="logoutBtn" class="btn btn-primary">Logout</button>
+    <button id="addRowBtn" class="btn btn-primary">+ Tambah Data</button>
+    
+    <div class="dropdown">
+      <button class="btn btn-success">Export Data ▾</button>
       <div class="dropdown-content">
         <button id="exportExcel">Excel</button>
         <button id="exportCSV">CSV</button>
       </div>
     </div>
 
-    <div class="dropdown">Filter Progress
+    <div class="dropdown">
+      <button class="btn btn-primary">Filter Progress ▾</button>
       <div class="dropdown-content">
         <button id="filterAll">Semua</button>
         <button id="filterDone">Selesai</button>
@@ -154,7 +173,7 @@ button:hover, .dropdown:hover {
     </div>
 
     <div id="filters">
-      <input type="text" placeholder="Cari POL atau POD" id="mainSearch">
+      <input type="text" placeholder="Cari POL, POD, atau Incoterm" id="mainSearch">
     </div>
 
     <table id="importTable">
@@ -165,7 +184,7 @@ button:hover, .dropdown:hover {
           <th>ETD</th>
           <th>ETA</th>
           <th>Incoterm</th>
-          <th>Type Of Shipment</th>
+          <th>Type of Shipment</th>
           <th>Progress</th>
           <th>Aksi</th>
         </tr>
@@ -175,18 +194,20 @@ button:hover, .dropdown:hover {
   </div>
 </div>
 
+<img src="logo.png" alt="Logo" class="logo">
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
-  authDomain: "track-and-trace-ca19a.firebaseapp.com",
-  projectId: "track-and-trace-ca19a",
-  storageBucket: "track-and-trace-ca19a.appspot.com",
-  messagingSenderId: "264766950053",
-  appId: "1:264766950053:web:b871670f2ab2c10d0f1b4c"
+  apiKey: "API_KEY_ANDA",
+  authDomain: "AUTH_DOMAIN_ANDA",
+  projectId: "PROJECT_ID_ANDA",
+  storageBucket: "STORAGE_BUCKET_ANDA",
+  messagingSenderId: "SENDER_ID_ANDA",
+  appId: "APP_ID_ANDA"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -195,26 +216,34 @@ const db = getFirestore(app);
 
 const loginSection = document.getElementById("loginSection");
 const adminSection = document.getElementById("adminSection");
-const importTableBody = document.querySelector("#importTable tbody");
+const tableBody = document.querySelector("#importTable tbody");
 
-loginBtn.onclick = () => {
+document.getElementById("loginBtn").addEventListener("click", () => {
   signInWithEmailAndPassword(auth, email.value, password.value)
     .catch(err => alert("Login gagal: " + err.message));
-};
-logoutBtn.onclick = () => signOut(auth);
+});
+document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
 
 onAuthStateChanged(auth, user => {
-  if (user) { loginSection.style.display="none"; adminSection.style.display="block"; loadImports(); }
-  else { loginSection.style.display="block"; adminSection.style.display="none"; }
+  if (user) {
+    loginSection.style.display = "none";
+    adminSection.style.display = "block";
+    loadData();
+  } else {
+    loginSection.style.display = "block";
+    adminSection.style.display = "none";
+  }
 });
 
-async function loadImports() {
-  importTableBody.innerHTML = "";
-  const querySnapshot = await getDocs(collection(db, "imports"));
-  querySnapshot.forEach(docSnap => addRowToTable(docSnap.id, docSnap.data()));
+async function loadData() {
+  tableBody.innerHTML = "";
+  const querySnapshot = await getDocs(collection(db, "importShipments"));
+  querySnapshot.forEach(docSnap => {
+    addRow(docSnap.id, docSnap.data());
+  });
 }
 
-function addRowToTable(id, data) {
+function addRow(id, data) {
   const tr = document.createElement("tr");
   const fields = ["pol","pod","etd","eta","incoterm","typeOfShipment"];
   fields.forEach(field => {
@@ -224,67 +253,98 @@ function addRowToTable(id, data) {
     td.classList.add("editable");
     tr.appendChild(td);
   });
+
   const progressTd = document.createElement("td");
-  const isComplete = fields.every(f => (data[f]||"").trim()!=="");
+  const isComplete = fields.every(f => (data[f] || "").trim() !== "");
   progressTd.textContent = isComplete ? "✅ Selesai" : "❌ Belum Selesai";
   progressTd.dataset.status = isComplete ? "done" : "pending";
   progressTd.style.color = isComplete ? "green" : "red";
   tr.appendChild(progressTd);
+
   const actionTd = document.createElement("td");
   const saveBtn = document.createElement("button");
   saveBtn.textContent = "Save";
-  saveBtn.onclick = async () => {
+  saveBtn.classList.add("btn","btn-primary");
+  saveBtn.addEventListener("click", async () => {
     const updatedData = {};
-    fields.forEach((field,i)=> updatedData[field] = tr.cells[i].textContent.trim());
-    await updateDoc(doc(db, "imports", id), updatedData);
-    loadImports();
-  };
+    fields.forEach((field, index) => {
+      updatedData[field] = tr.cells[index].textContent.trim();
+    });
+    await updateDoc(doc(db, "importShipments", id), updatedData);
+    alert("Data berhasil disimpan!");
+    loadData();
+  });
+
   const deleteBtn = document.createElement("span");
   deleteBtn.textContent = "🗑";
   deleteBtn.classList.add("delete-btn");
-  deleteBtn.onclick = async () => { if (confirm("Yakin hapus data ini?")) { await deleteDoc(doc(db, "imports", id)); loadImports(); } };
-  actionTd.append(saveBtn, deleteBtn);
+  deleteBtn.addEventListener("click", async () => {
+    if (confirm("Hapus data ini?")) {
+      await deleteDoc(doc(db, "importShipments", id));
+      loadData();
+    }
+  });
+
+  actionTd.appendChild(saveBtn);
+  actionTd.appendChild(deleteBtn);
   tr.appendChild(actionTd);
-  importTableBody.appendChild(tr);
+  tableBody.appendChild(tr);
 }
 
-addRowBtn.onclick = async () => {
-  await addDoc(collection(db, "imports"), { pol:"", pod:"", etd:"", eta:"", incoterm:"", typeOfShipment:"" });
-  loadImports();
-};
-
-mainSearch.onkeyup = function () {
-  const filter = this.value.toLowerCase();
-  Array.from(importTableBody.rows).forEach(row => {
-    row.style.display = row.cells[0].textContent.toLowerCase().includes(filter) || row.cells[1].textContent.toLowerCase().includes(filter) ? "" : "none";
+document.getElementById("addRowBtn").addEventListener("click", async () => {
+  await addDoc(collection(db, "importShipments"), {
+    pol: "", pod: "", etd: "", eta: "", incoterm: "", typeOfShipment: ""
   });
-};
-filterAll.onclick = () => Array.from(importTableBody.rows).forEach(r=>r.style.display="");
-filterDone.onclick = () => Array.from(importTableBody.rows).forEach(r=>r.style.display = r.cells[6].dataset.status==="done" ? "" : "none");
-filterPending.onclick = () => Array.from(importTableBody.rows).forEach(r=>r.style.display = r.cells[6].dataset.status==="pending" ? "" : "none");
+  loadData();
+});
 
-exportExcel.onclick = () => exportTableToExcel("importTable","import_data");
-exportCSV.onclick = () => exportTableToCSV("import_data.csv");
+document.getElementById("mainSearch").addEventListener("keyup", function () {
+  const filter = this.value.toLowerCase();
+  Array.from(tableBody.rows).forEach(row => {
+    const pol = row.cells[0].textContent.toLowerCase();
+    const pod = row.cells[1].textContent.toLowerCase();
+    const incoterm = row.cells[4].textContent.toLowerCase();
+    row.style.display = (pol.includes(filter) || pod.includes(filter) || incoterm.includes(filter)) ? "" : "none";
+  });
+});
 
-function exportTableToExcel(tableID, filename="") {
+document.getElementById("filterAll").addEventListener("click", () => {
+  Array.from(tableBody.rows).forEach(row => row.style.display = "");
+});
+document.getElementById("filterDone").addEventListener("click", () => {
+  Array.from(tableBody.rows).forEach(row => row.style.display = row.cells[6].dataset.status === "done" ? "" : "none");
+});
+document.getElementById("filterPending").addEventListener("click", () => {
+  Array.from(tableBody.rows).forEach(row => row.style.display = row.cells[6].dataset.status === "pending" ? "" : "none");
+});
+
+document.getElementById("exportExcel").addEventListener("click", () => exportTableToExcel("importTable", "import_data"));
+document.getElementById("exportCSV").addEventListener("click", () => exportTableToCSV("import_data.csv"));
+
+function exportTableToExcel(tableID, filename = "") {
+  const dataType = 'application/vnd.ms-excel';
   const tableSelect = document.getElementById(tableID);
   const tableHTML = tableSelect.outerHTML.replace(/ /g, '%20');
+  filename = filename ? filename + '.xls' : 'excel_data.xls';
   const downloadLink = document.createElement("a");
-  downloadLink.href = 'data:application/vnd.ms-excel,' + tableHTML;
-  downloadLink.download = filename ? filename+'.xls' : 'excel_data.xls';
+  document.body.appendChild(downloadLink);
+  downloadLink.href = 'data:' + dataType + ', ' + tableHTML;
+  downloadLink.download = filename;
   downloadLink.click();
 }
+
 function exportTableToCSV(filename) {
   const csv = [];
   const rows = document.querySelectorAll("table tr");
-  for (let row of rows) {
+  rows.forEach(row => {
     const cols = row.querySelectorAll("td, th");
-    csv.push(Array.from(cols).map(col=>col.innerText).join(","));
-  }
+    const rowData = Array.from(cols).map(col => col.innerText);
+    csv.push(rowData.join(","));
+  });
   const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
   const downloadLink = document.createElement("a");
   downloadLink.download = filename;
-  downloadLink.href = URL.createObjectURL(csvFile);
+  downloadLink.href = window.URL.createObjectURL(csvFile);
   downloadLink.click();
 }
 </script>
