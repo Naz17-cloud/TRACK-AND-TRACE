@@ -6,48 +6,27 @@
 <title>Admin — Import Shipments</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  body{font-family:'Poppins',sans-serif;margin:20px;background:url('background.jpg') no-repeat center center fixed;background-size:cover;color:#fff}
-  .overlay{background:rgba(0,0,0,0.5);min-height:100vh;padding:24px;border-radius:8px}
-  h2{color:#ffcc80;text-align:center;margin-bottom:6px}
-  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin-bottom:12px}
-  .btn{padding:6px 10px;border-radius:6px;border:none;font-weight:600;cursor:pointer}
-  .btn-primary{background:#ff9800;color:#fff}
-  .btn-success{background:#4caf50;color:#fff}
-  input.search{padding:8px;border-radius:6px;border:none;width:320px}
-  .dropdown { position: relative; display: inline-block; }
-  .dropdown-content {
-    display: none;
-    position: absolute;
-    background-color: #f9f9f9;
-    min-width: 120px;
-    box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-    z-index: 1;
-    border-radius: 5px;
-    overflow: hidden;
-  }
-  .dropdown-content button {
-    background: none;
-    color: #333;
-    padding: 8px 12px;
-    text-align: left;
-    border: none;
-    width: 100%;
-    font-size: 12px;
-    cursor: pointer;
-  }
-  .dropdown-content button:hover { background-color: #eee; }
-  .dropdown:hover .dropdown-content { display: block; }
-  table{width:100%;border-collapse:collapse;background:rgba(255,255,255,0.95);color:#333;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.15)}
-  th{background:linear-gradient(90deg,#3c78b4,#2864a0);color:#fff;padding:8px;text-align:left;font-size:13px}
-  td{padding:6px;font-size:13px}
-  tr:nth-child(even) td{background:#f8f8f8}
-  .editable{background:#fff9e0;border-radius:4px;padding:4px}
-  th:nth-last-child(2),td:nth-last-child(2){width:90px;text-align:center}
-  th:last-child,td:last-child{width:80px;text-align:center}
-  td button{padding:4px 7px;font-size:12px}
-  .delete-btn{cursor:pointer;color:#ff5722;font-size:15px;margin-left:6px}
-  .logo{position:absolute;top:20px;right:20px;width:100px;animation:logoAnim 1.5s ease-in-out infinite alternate}
-  @keyframes logoAnim{0%{transform:scale(1) rotate(0);opacity:0.8}50%{transform:scale(1.05) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(-2deg);opacity:0.9}}
+  body { font-family:'Poppins',sans-serif; margin:20px; background:url('background.jpg') no-repeat center center fixed; background-size:cover; color:#fff; }
+  .overlay { background:rgba(0,0,0,0.5); min-height:100vh; padding:24px; border-radius:8px; }
+  h2 { color:#ffcc80; text-align:center; margin-bottom:6px; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center; margin-bottom:12px; }
+  .btn { padding:6px 10px; border-radius:6px; border:none; font-weight:600; cursor:pointer; font-size:13px; }
+  .btn-primary { background:#ff9800; color:#fff; }
+  .btn-success { background:#4caf50; color:#fff; }
+  .dropdown { position:relative; display:inline-block; }
+  .dropdown-content { display:none; position:absolute; background:#fff; min-width:120px; box-shadow:0px 8px 16px rgba(0,0,0,0.2); z-index:10; border-radius:5px; overflow:hidden; }
+  .dropdown-content button { background:none; color:#333; padding:8px 12px; text-align:left; border:none; width:100%; font-size:12px; cursor:pointer; }
+  .dropdown-content button:hover { background:#eee; }
+  .dropdown:hover .dropdown-content { display:block; }
+  input.search { padding:8px; border-radius:6px; border:none; width:320px; }
+  table { width:100%; border-collapse:collapse; background:rgba(255,255,255,0.95); color:#333; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
+  th { background:linear-gradient(90deg,#3c78b4,#2864a0); color:#fff; padding:8px; text-align:left; font-size:13px; }
+  td { padding:6px; font-size:13px; }
+  tr:nth-child(even) td { background:#f8f8f8; }
+  .editable { background:#fff9e0; border-radius:4px; padding:4px; }
+  .delete-btn { cursor:pointer; color:#ff5722; font-size:15px; margin-left:6px; }
+  .logo { position:absolute; top:20px; right:20px; width:100px; animation:logoAnim 1.5s ease-in-out infinite alternate; }
+  @keyframes logoAnim { 0%{transform:scale(1) rotate(0);opacity:0.8}50%{transform:scale(1.05) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(-2deg);opacity:0.9} }
 </style>
 </head>
 <body>
@@ -90,6 +69,7 @@
         <thead>
           <tr>
             <th>Bill of Lading</th>
+            <th>Vessel/Voyage</th>
             <th>POL</th>
             <th>POD</th>
             <th>ETD</th>
@@ -127,7 +107,7 @@
 
   const loginSection = document.getElementById('loginSection');
   const adminSection = document.getElementById('adminSection');
-  const tableBody = document.querySelector('#importTable tbody');
+  const importTableBody = document.querySelector('#importTable tbody');
 
   document.getElementById('loginBtn').addEventListener('click', () => {
     const email = document.getElementById('email').value;
@@ -139,19 +119,21 @@
   document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
 
   onAuthStateChanged(auth, user => {
-    if (user) { loginSection.style.display='none'; adminSection.style.display='block'; loadData(); }
+    if (user) { loginSection.style.display='none'; adminSection.style.display='block'; loadImports(); }
     else { loginSection.style.display='block'; adminSection.style.display='none'; }
   });
 
-  async function loadData(){
-    tableBody.innerHTML = '';
-    const snap = await getDocs(collection(db,'importShipments'));
-    snap.forEach(s => addRow(s.id, s.data()));
+  async function loadImports(){
+    importTableBody.innerHTML = '';
+    try {
+      const snap = await getDocs(collection(db,'importShipments'));
+      snap.forEach(s => addRowToTable(s.id, s.data()));
+    } catch(err){ console.error('loadImports error', err); alert('Gagal load importShipments. Cek console.'); }
   }
 
-  function addRow(id, data){
+  function addRowToTable(id, data){
     const tr = document.createElement('tr');
-    const fields = ['billOfLading','pol','pod','etd','eta','incoterm','typeOfShipment'];
+    const fields = ['billOfLading','vesselVoyage','pol','pod','etd','eta','incoterm','typeOfShipment'];
     fields.forEach(field => {
       const td = document.createElement('td');
       td.textContent = data[field] || '';
@@ -160,8 +142,8 @@
       tr.appendChild(td);
     });
 
-    const isComplete = fields.every(f => (data[f]||'').trim() !== '');
     const progressTd = document.createElement('td');
+    const isComplete = fields.every(f => (data[f]||'').toString().trim() !== '');
     progressTd.textContent = isComplete ? '✅ Selesai' : '❌ Belum Selesai';
     progressTd.dataset.status = isComplete ? 'done' : 'pending';
     progressTd.style.color = isComplete ? 'green' : 'red';
@@ -170,62 +152,58 @@
     const actionTd = document.createElement('td');
     const saveBtn = document.createElement('button');
     saveBtn.textContent = 'Save';
-    saveBtn.classList.add('btn');
+    saveBtn.classList.add('btn','btn-primary');
     saveBtn.addEventListener('click', async () => {
       const updated = {};
-      fields.forEach((f,i)=> updated[f] = tr.cells[i].textContent.trim());
+      fields.forEach((field,i)=> updated[field] = tr.cells[i].textContent.trim());
       if (!updated.billOfLading) return alert('Bill Of Lading wajib diisi');
-      await updateDoc(doc(db,'importShipments',id), updated);
-      alert('Tersimpan');
-      loadData();
+      try { await updateDoc(doc(db,'importShipments',id),updated); alert('Tersimpan'); loadImports(); } catch(e){ console.error(e); alert('Gagal menyimpan'); }
     });
-    const delBtn = document.createElement('span');
-    delBtn.textContent = '🗑';
-    delBtn.classList.add('delete-btn');
-    delBtn.addEventListener('click', async () => {
-      if (!confirm('Yakin hapus?')) return;
-      await deleteDoc(doc(db,'importShipments',id));
-      loadData();
-    });
-    actionTd.appendChild(saveBtn);
-    actionTd.appendChild(delBtn);
-    tr.appendChild(actionTd);
 
-    tableBody.appendChild(tr);
+    const del = document.createElement('span');
+    del.textContent = '🗑';
+    del.classList.add('delete-btn');
+    del.addEventListener('click', async ()=>{ if(!confirm('Yakin hapus?')) return; try{ await deleteDoc(doc(db,'importShipments',id)); loadImports(); } catch(e){ console.error(e); alert('Gagal hapus'); } });
+
+    actionTd.appendChild(saveBtn);
+    actionTd.appendChild(del);
+    tr.appendChild(actionTd);
+    importTableBody.appendChild(tr);
   }
 
   document.getElementById('addRowBtn').addEventListener('click', async () => {
-    await addDoc(collection(db,'importShipments'), {billOfLading:'',pol:'',pod:'',etd:'',eta:'',incoterm:'',typeOfShipment:''});
-    loadData();
+    const newDoc = { billOfLading:'', vesselVoyage:'', pol:'', pod:'', etd:'', eta:'', incoterm:'', typeOfShipment:'' };
+    try { await addDoc(collection(db,'importShipments'), newDoc); loadImports(); } catch(e){ console.error(e); alert('Gagal tambah data'); }
   });
 
   document.getElementById('mainSearch').addEventListener('input', function(){
     const q = this.value.toLowerCase();
-    Array.from(tableBody.rows).forEach(row=>{
+    Array.from(importTableBody.rows).forEach(row=>{
       const bol = row.cells[0].textContent.toLowerCase();
-      const pol = row.cells[1].textContent.toLowerCase();
-      const pod = row.cells[2].textContent.toLowerCase();
+      const pol = row.cells[2].textContent.toLowerCase();
+      const pod = row.cells[3].textContent.toLowerCase();
       row.style.display = (bol.includes(q)||pol.includes(q)||pod.includes(q)) ? '' : 'none';
     });
   });
 
-  document.getElementById('filterAll').addEventListener('click', () => {
-    Array.from(tableBody.rows).forEach(row=> row.style.display='');
+  document.getElementById("filterAll").addEventListener("click", () => {
+    Array.from(importTableBody.rows).forEach(row => row.style.display = "");
   });
-  document.getElementById('filterDone').addEventListener('click', () => {
-    Array.from(tableBody.rows).forEach(row=> row.style.display = row.cells[7].dataset.status === 'done' ? '' : 'none');
+  document.getElementById("filterDone").addEventListener("click", () => {
+    Array.from(importTableBody.rows).forEach(row => row.style.display = row.cells[8].dataset.status === "done" ? "" : "none");
   });
-  document.getElementById('filterPending').addEventListener('click', () => {
-    Array.from(tableBody.rows).forEach(row=> row.style.display = row.cells[7].dataset.status === 'pending' ? '' : 'none');
+  document.getElementById("filterPending").addEventListener("click", () => {
+    Array.from(importTableBody.rows).forEach(row => row.style.display = row.cells[8].dataset.status === "pending" ? "" : "none");
   });
 
-  document.getElementById('exportExcel').addEventListener('click', () => exportTableToExcel('importTable','import_data'));
-  document.getElementById('exportCSV').addEventListener('click', () => exportTableToCSV('import_data.csv'));
+  document.getElementById("exportExcel").addEventListener("click", () => exportTableToExcel("importTable", "import_data"));
+  document.getElementById("exportCSV").addEventListener("click", () => exportTableToCSV("import_data.csv"));
 
-  function exportTableToExcel(tableID, filename=''){
+  function exportTableToExcel(tableID, filename = "") {
     const dataType = 'application/vnd.ms-excel';
-    const tableHTML = document.getElementById(tableID).outerHTML.replace(/ /g, '%20');
-    filename = filename ? filename+'.xls' : 'excel_data.xls';
+    const tableSelect = document.getElementById(tableID);
+    const tableHTML = tableSelect.outerHTML.replace(/ /g, '%20');
+    filename = filename ? filename + '.xls' : 'excel_data.xls';
     const downloadLink = document.createElement("a");
     document.body.appendChild(downloadLink);
     downloadLink.href = 'data:' + dataType + ', ' + tableHTML;
@@ -233,10 +211,10 @@
     downloadLink.click();
   }
 
-  function exportTableToCSV(filename){
+  function exportTableToCSV(filename) {
     const csv = [];
     const rows = document.querySelectorAll("table tr");
-    rows.forEach(row=>{
+    rows.forEach(row => {
       const cols = row.querySelectorAll("td, th");
       const rowData = Array.from(cols).map(col => col.innerText);
       csv.push(rowData.join(","));
