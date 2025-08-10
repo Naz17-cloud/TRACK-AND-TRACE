@@ -31,7 +31,7 @@
     opacity: 0.7;
     margin-bottom: 20px;
   }
-  /* Buttons */
+  /* Buttons & dropdowns */
   .btn {
     padding: 5px 10px;
     border-radius: 5px;
@@ -45,12 +45,14 @@
   .btn-primary:hover { background-color: #e68900; }
   .btn-success { background-color: #4caf50; color: white; }
   .btn-success:hover { background-color: #388e3c; }
-  /* Dropdown */
-  .dropdown { position: relative; display: inline-block; }
+  .dropdown {
+    position: relative;
+    display: inline-block;
+  }
   .dropdown-content {
     display: none;
     position: absolute;
-    background-color: #fff;
+    background-color: #f9f9f9;
     min-width: 120px;
     box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
     z-index: 1;
@@ -67,10 +69,18 @@
     font-size: 12px;
     cursor: pointer;
   }
-  .dropdown-content button:hover { background-color: #eee; }
-  .dropdown:hover .dropdown-content { display: block; }
+  .dropdown-content button:hover {
+    background-color: #eee;
+  }
+  .dropdown:hover .dropdown-content {
+    display: block;
+  }
   /* Search */
-  #filters { max-width: 500px; margin: 0 auto 15px; text-align: center; }
+  #filters {
+    max-width: 500px;
+    margin: 0 auto 15px;
+    text-align: center;
+  }
   #filters input {
     width: 100%;
     padding: 8px;
@@ -79,47 +89,56 @@
     font-size: 14px;
     margin-bottom: 10px;
   }
-  /* Table */
+  /* Table style */
   table {
     border-collapse: collapse;
     width: 100%;
     font-size: 13px;
     border-radius: 10px;
     overflow: hidden;
-    background: rgba(255,255,255,0.95);
+    background: rgba(255,255,255,0.9);
     color: #333;
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   }
   th {
     background: linear-gradient(90deg, rgba(60,120,180,1) 0%, rgba(40,100,160,1) 100%);
     color: white;
-    padding: 8px;
+    padding: 10px;
     text-align: left;
-    font-size: 12px;
+    font-size: 13px;
   }
-  td { padding: 6px; }
-  tr:nth-child(even) td { background-color: #f8f8f8; }
-  tr:hover td { background-color: #e6f2ff; }
-  .editable { background-color: #fff9e0; border-radius: 3px; }
-  .delete-btn {
-    cursor: pointer;
-    color: #ff5722;
-    font-weight: bold;
-    font-size: 14px;
-    margin-left: 5px;
+  td {
+    padding: 8px;
   }
-  /* Smaller Progress & Action columns */
+  tr:nth-child(even) td {
+    background-color: #f2f2f2;
+  }
+  tr:hover td {
+    background-color: #e6f2ff;
+  }
+  .editable {
+    background-color: #fff9e0;
+    border-radius: 3px;
+  }
+  /* Smaller progress & action columns */
   th:nth-last-child(2), td:nth-last-child(2) {
     width: 90px;
     text-align: center;
   }
   th:last-child, td:last-child {
-    width: 85px;
+    width: 80px;
     text-align: center;
   }
   td button {
     padding: 3px 6px;
     font-size: 11px;
+  }
+  .delete-btn {
+    font-size: 14px;
+    cursor: pointer;
+    color: #ff5722;
+    font-weight: bold;
+    margin-left: 5px;
   }
   .logo {
     position: absolute;
@@ -168,12 +187,13 @@
     </div>
 
     <div id="filters">
-      <input type="text" placeholder="Cari POL, POD, atau Incoterm" id="mainSearch">
+      <input type="text" placeholder="Cari Bill of Lading, POL, atau POD" id="mainSearch">
     </div>
 
     <table id="importTable">
       <thead>
         <tr>
+          <th>Bill of Lading</th>
           <th>POL</th>
           <th>POD</th>
           <th>ETD</th>
@@ -233,12 +253,14 @@ onAuthStateChanged(auth, user => {
 async function loadData() {
   tableBody.innerHTML = "";
   const querySnapshot = await getDocs(collection(db, "importShipments"));
-  querySnapshot.forEach(docSnap => addRow(docSnap.id, docSnap.data()));
+  querySnapshot.forEach(docSnap => {
+    addRow(docSnap.id, docSnap.data());
+  });
 }
 
 function addRow(id, data) {
   const tr = document.createElement("tr");
-  const fields = ["pol","pod","etd","eta","incoterm","typeOfShipment"];
+  const fields = ["billOfLading","pol","pod","etd","eta","incoterm","typeOfShipment"];
   fields.forEach(field => {
     const td = document.createElement("td");
     td.textContent = data[field] || "";
@@ -249,7 +271,7 @@ function addRow(id, data) {
 
   const progressTd = document.createElement("td");
   const isComplete = fields.every(f => (data[f] || "").trim() !== "");
-  progressTd.textContent = isComplete ? "✅" : "❌";
+  progressTd.textContent = isComplete ? "✅ Selesai" : "❌ Belum Selesai";
   progressTd.dataset.status = isComplete ? "done" : "pending";
   progressTd.style.color = isComplete ? "green" : "red";
   tr.appendChild(progressTd);
@@ -286,7 +308,7 @@ function addRow(id, data) {
 
 document.getElementById("addRowBtn").addEventListener("click", async () => {
   await addDoc(collection(db, "importShipments"), {
-    pol: "", pod: "", etd: "", eta: "", incoterm: "", typeOfShipment: ""
+    billOfLading: "", pol: "", pod: "", etd: "", eta: "", incoterm: "", typeOfShipment: ""
   });
   loadData();
 });
@@ -294,10 +316,10 @@ document.getElementById("addRowBtn").addEventListener("click", async () => {
 document.getElementById("mainSearch").addEventListener("keyup", function () {
   const filter = this.value.toLowerCase();
   Array.from(tableBody.rows).forEach(row => {
-    const pol = row.cells[0].textContent.toLowerCase();
-    const pod = row.cells[1].textContent.toLowerCase();
-    const incoterm = row.cells[4].textContent.toLowerCase();
-    row.style.display = (pol.includes(filter) || pod.includes(filter) || incoterm.includes(filter)) ? "" : "none";
+    const bol = row.cells[0].textContent.toLowerCase();
+    const pol = row.cells[1].textContent.toLowerCase();
+    const pod = row.cells[2].textContent.toLowerCase();
+    row.style.display = (bol.includes(filter) || pol.includes(filter) || pod.includes(filter)) ? "" : "none";
   });
 });
 
@@ -305,10 +327,10 @@ document.getElementById("filterAll").addEventListener("click", () => {
   Array.from(tableBody.rows).forEach(row => row.style.display = "");
 });
 document.getElementById("filterDone").addEventListener("click", () => {
-  Array.from(tableBody.rows).forEach(row => row.style.display = row.cells[6].dataset.status === "done" ? "" : "none");
+  Array.from(tableBody.rows).forEach(row => row.style.display = row.cells[7].dataset.status === "done" ? "" : "none");
 });
 document.getElementById("filterPending").addEventListener("click", () => {
-  Array.from(tableBody.rows).forEach(row => row.style.display = row.cells[6].dataset.status === "pending" ? "" : "none");
+  Array.from(tableBody.rows).forEach(row => row.style.display = row.cells[7].dataset.status === "pending" ? "" : "none");
 });
 
 document.getElementById("exportExcel").addEventListener("click", () => exportTableToExcel("importTable", "import_data"));
