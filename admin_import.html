@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Import Data Tracking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 20px;
+      background: url('background.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+    }
+    .overlay {
+      background-color: rgba(0, 0, 0, 0.5);
+      min-height: 100vh;
+      padding: 30px;
+      border-radius: 8px;
+    }
+    h2 {
+      color: #ffcc80;
+      text-align: center;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    .watermark {
+      text-align: center;
+      font-size: 12px;
+      opacity: 0.7;
+      margin-bottom: 20px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 14px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: rgba(60, 120, 180, 0.9);
+      font-weight: 600;
+      color: #fff;
+    }
+    td {
+      background-color: #dcdcdc;
+      color: #333;
+    }
+    tr:nth-child(even) td {
+      background-color: #c9c9c9;
+    }
+    button {
+      padding: 6px 12px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      background-color: #ff9800;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      font-size: 12px;
+    }
+    button:hover {
+      background-color: #e68900;
+    }
+    .btn-export {
+      background-color: #4caf50;
+    }
+    .btn-export:hover {
+      background-color: #388e3c;
+    }
+    .editable {
+      background-color: #fff9e0;
+      color: #333;
+      border-radius: 3px;
+    }
+    .delete-btn {
+      cursor: pointer;
+      color: #ff5722;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+    .logo {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 100px;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+
+<div class="overlay">
+  <h2>Admin Import Data Tracking</h2>
+  <div class="watermark">by nazrll</div>
+
+  <div id="loginSection">
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn">Login</button>
+  </div>
+
+  <div id="adminSection" style="display:none;">
+    <button id="logoutBtn">Logout</button>
+    <button id="addRowBtn">+ Tambah Data</button>
+    <button id="exportExcel" class="btn-export">Export to Excel</button>
+    <button id="exportCSV" class="btn-export">Export to CSV</button>
+
+    <table id="shipmentTable">
+      <thead>
+        <tr>
+          <th>POL</th>
+          <th>POD</th>
+          <th>ETD</th>
+          <th>ETA</th>
+          <th>Incoterm</th>
+          <th>Type Of Shipment</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<img src="logo.png" alt="Logo" class="logo">
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "API_KEY_ANDA",
+        authDomain: "DOMAIN_ANDA.firebaseapp.com",
+        projectId: "PROJECT_ID_ANDA",
+        storageBucket: "PROJECT_ID_ANDA.appspot.com",
+        messagingSenderId: "SENDER_ID_ANDA",
+        appId: "APP_ID_ANDA"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const loginSection = document.getElementById("loginSection");
+    const adminSection = document.getElementById("adminSection");
+    const shipmentTableBody = document.querySelector("#shipmentTable tbody");
+
+    document.getElementById("loginBtn").addEventListener("click", () => {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        signInWithEmailAndPassword(auth, email, password)
+            .catch(err => alert("Login gagal: " + err.message));
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+        signOut(auth);
+    });
+
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            loginSection.style.display = "none";
+            adminSection.style.display = "block";
+            loadShipments();
+        } else {
+            loginSection.style.display = "block";
+            adminSection.style.display = "none";
+        }
+    });
+
+    async function loadShipments() {
+        shipmentTableBody.innerHTML = "";
+        const querySnapshot = await getDocs(collection(db, "shipments_import"));
+        querySnapshot.forEach(docSnap => {
+            addRowToTable(docSnap.id, docSnap.data());
+        });
+    }
+
+    function addRowToTable(id, data) {
+        const tr = document.createElement("tr");
+        const fields = ["pol","pod","etd","eta","incoterm","typeOfShipment"];
+
+        fields.forEach(field => {
+            const td = document.createElement("td");
+            td.textContent = data[field] || "";
+            td.contentEditable = true;
+            td.classList.add("editable");
+            tr.appendChild(td);
+        });
+
+        const actionTd = document.createElement("td");
+        const saveBtn = document.createElement("button");
+        saveBtn.textContent = "Save";
+        saveBtn.addEventListener("click", async () => {
+            const updatedData = {};
+            fields.forEach((field, index) => {
+                updatedData[field] = tr.cells[index].textContent.trim();
+            });
+            await updateDoc(doc(db, "shipments_import", id), updatedData);
+            alert("Data berhasil disimpan!");
+            loadShipments();
+        });
+
+        const deleteBtn = document.createElement("span");
+        deleteBtn.textContent = "🗑";
+        deleteBtn.classList.add("delete-btn");
+        deleteBtn.addEventListener("click", async () => {
+            if (confirm("Yakin hapus data ini?")) {
+                await deleteDoc(doc(db, "shipments_import", id));
+                loadShipments();
+            }
+        });
+
+        actionTd.appendChild(saveBtn);
+        actionTd.appendChild(deleteBtn);
+        tr.appendChild(actionTd);
+        shipmentTableBody.appendChild(tr);
+    }
+
+    document.getElementById("addRowBtn").addEventListener("click", async () => {
+        await addDoc(collection(db, "shipments_import"), {
+            pol: "", pod: "", etd: "", eta: "", incoterm: "", typeOfShipment: ""
+        });
+        loadShipments();
+    });
+
+    document.getElementById("exportExcel").addEventListener("click", () => {
+        exportTableToExcel("shipmentTable", "shipment_import_data");
+    });
+
+    document.getElementById("exportCSV").addEventListener("click", () => {
+        exportTableToCSV("shipment_import_data.csv");
+    });
+
+    function exportTableToExcel(tableID, filename = "") {
+      const dataType = 'application/vnd.ms-excel';
+      const tableSelect = document.getElementById(tableID);
+      const tableHTML = tableSelect.outerHTML.replace(/ /g, '%20');
+      filename = filename ? filename + '.xls' : 'excel_data.xls';
+      const downloadLink = document.createElement("a");
+      document.body.appendChild(downloadLink);
+      downloadLink.href = 'data:' + dataType + ', ' + tableHTML;
+      downloadLink.download = filename;
+      downloadLink.click();
+    }
+
+    function exportTableToCSV(filename) {
+      const csv = [];
+      const rows = document.querySelectorAll("table tr");
+      for (let i = 0; i < rows.length; i++) {
+        const row = [], cols = rows[i].querySelectorAll("td, th");
+        for (let j = 0; j < cols.length; j++) {
+          row.push(cols[j].innerText);
+        }
+        csv.push(row.join(","));
+      }
+      const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
+      const downloadLink = document.createElement("a");
+      downloadLink.download = filename;
+      downloadLink.href = window.URL.createObjectURL(csvFile);
+      downloadLink.click();
+    }
+</script>
+</body>
+</html>
