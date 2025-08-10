@@ -10,10 +10,33 @@
   .overlay{background:rgba(0,0,0,0.5);min-height:100vh;padding:24px;border-radius:8px}
   h2{color:#ffcc80;text-align:center;margin-bottom:6px}
   .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin-bottom:12px}
-  .btn{padding:6px 10px;border-radius:6px;border:none;font-weight:600;cursor:pointer;font-size:13px}
+  .btn{padding:6px 10px;border-radius:6px;border:none;font-weight:600;cursor:pointer}
   .btn-primary{background:#ff9800;color:#fff}
   .btn-success{background:#4caf50;color:#fff}
-  input.search{padding:8px;border-radius:6px;border:none;width:260px;font-size:13px}
+  input.search{padding:8px;border-radius:6px;border:none;width:320px}
+  .dropdown { position: relative; display: inline-block; }
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 120px;
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+    z-index: 1;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .dropdown-content button {
+    background: none;
+    color: #333;
+    padding: 8px 12px;
+    text-align: left;
+    border: none;
+    width: 100%;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .dropdown-content button:hover { background-color: #eee; }
+  .dropdown:hover .dropdown-content { display: block; }
   table{width:100%;border-collapse:collapse;background:rgba(255,255,255,0.95);color:#333;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.15)}
   th{background:linear-gradient(90deg,#3c78b4,#2864a0);color:#fff;padding:8px;text-align:left;font-size:13px}
   td{padding:6px;font-size:13px}
@@ -43,24 +66,27 @@
         <button id="logoutBtn" class="btn btn-primary">Logout</button>
         <button id="addRowBtn" class="btn btn-primary">+ Tambah Data</button>
 
-        <!-- Tombol Export -->
-        <div>
-          <button class="btn btn-success" onclick="exportTableToExcel('importTable','import_data')">Export Excel</button>
-          <button class="btn btn-success" onclick="exportTableToCSV('import_data.csv')">Export CSV</button>
+        <div class="dropdown">
+          <button class="btn btn-success">Export Data ▾</button>
+          <div class="dropdown-content">
+            <button id="exportExcel">Excel</button>
+            <button id="exportCSV">CSV</button>
+          </div>
         </div>
 
-        <!-- Filter Progress -->
-        <div>
-          <button id="filterAll" class="btn btn-primary">Semua</button>
-          <button id="filterDone" class="btn btn-primary">Selesai</button>
-          <button id="filterPending" class="btn btn-primary">Belum Selesai</button>
+        <div class="dropdown">
+          <button class="btn btn-primary">Filter Progress ▾</button>
+          <div class="dropdown-content">
+            <button id="filterAll">Semua</button>
+            <button id="filterDone">Selesai</button>
+            <button id="filterPending">Belum Selesai</button>
+          </div>
         </div>
 
-        <!-- Pencarian -->
         <input id="mainSearch" class="search" placeholder="Cari Bill of Lading, POL, atau POD">
       </div>
 
-      <table id="importTable">
+      <table id="importTable" aria-live="polite">
         <thead>
           <tr>
             <th>Bill of Lading</th>
@@ -101,7 +127,7 @@
 
   const loginSection = document.getElementById('loginSection');
   const adminSection = document.getElementById('adminSection');
-  const importTableBody = document.querySelector('#importTable tbody');
+  const tableBody = document.querySelector('#importTable tbody');
 
   document.getElementById('loginBtn').addEventListener('click', () => {
     const email = document.getElementById('email').value;
@@ -113,17 +139,17 @@
   document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
 
   onAuthStateChanged(auth, user => {
-    if (user) { loginSection.style.display='none'; adminSection.style.display='block'; loadImports(); }
+    if (user) { loginSection.style.display='none'; adminSection.style.display='block'; loadData(); }
     else { loginSection.style.display='block'; adminSection.style.display='none'; }
   });
 
-  async function loadImports(){
-    importTableBody.innerHTML = '';
+  async function loadData(){
+    tableBody.innerHTML = '';
     const snap = await getDocs(collection(db,'importShipments'));
-    snap.forEach(s => addRowToTable(s.id, s.data()));
+    snap.forEach(s => addRow(s.id, s.data()));
   }
 
-  function addRowToTable(id, data){
+  function addRow(id, data){
     const tr = document.createElement('tr');
     const fields = ['billOfLading','pol','pod','etd','eta','incoterm','typeOfShipment'];
     fields.forEach(field => {
@@ -144,13 +170,14 @@
     const actionTd = document.createElement('td');
     const saveBtn = document.createElement('button');
     saveBtn.textContent = 'Save';
-    saveBtn.classList.add('btn','btn-primary');
+    saveBtn.classList.add('btn');
     saveBtn.addEventListener('click', async () => {
       const updated = {};
       fields.forEach((f,i)=> updated[f] = tr.cells[i].textContent.trim());
       if (!updated.billOfLading) return alert('Bill Of Lading wajib diisi');
-      await updateDoc(doc(db,'importShipments',id),updated);
-      loadImports();
+      await updateDoc(doc(db,'importShipments',id), updated);
+      alert('Tersimpan');
+      loadData();
     });
     const delBtn = document.createElement('span');
     delBtn.textContent = '🗑';
@@ -158,25 +185,23 @@
     delBtn.addEventListener('click', async () => {
       if (!confirm('Yakin hapus?')) return;
       await deleteDoc(doc(db,'importShipments',id));
-      loadImports();
+      loadData();
     });
-
     actionTd.appendChild(saveBtn);
     actionTd.appendChild(delBtn);
     tr.appendChild(actionTd);
-    importTableBody.appendChild(tr);
+
+    tableBody.appendChild(tr);
   }
 
   document.getElementById('addRowBtn').addEventListener('click', async () => {
-    await addDoc(collection(db,'importShipments'), {
-      billOfLading:'', pol:'', pod:'', etd:'', eta:'', incoterm:'', typeOfShipment:''
-    });
-    loadImports();
+    await addDoc(collection(db,'importShipments'), {billOfLading:'',pol:'',pod:'',etd:'',eta:'',incoterm:'',typeOfShipment:''});
+    loadData();
   });
 
   document.getElementById('mainSearch').addEventListener('input', function(){
     const q = this.value.toLowerCase();
-    Array.from(importTableBody.rows).forEach(row=>{
+    Array.from(tableBody.rows).forEach(row=>{
       const bol = row.cells[0].textContent.toLowerCase();
       const pol = row.cells[1].textContent.toLowerCase();
       const pod = row.cells[2].textContent.toLowerCase();
@@ -185,41 +210,43 @@
   });
 
   document.getElementById('filterAll').addEventListener('click', () => {
-    Array.from(importTableBody.rows).forEach(r=> r.style.display='');
+    Array.from(tableBody.rows).forEach(row=> row.style.display='');
   });
   document.getElementById('filterDone').addEventListener('click', () => {
-    Array.from(importTableBody.rows).forEach(r=> r.style.display = r.cells[7].dataset.status === 'done' ? '' : 'none');
+    Array.from(tableBody.rows).forEach(row=> row.style.display = row.cells[7].dataset.status === 'done' ? '' : 'none');
   });
   document.getElementById('filterPending').addEventListener('click', () => {
-    Array.from(importTableBody.rows).forEach(r=> r.style.display = r.cells[7].dataset.status === 'pending' ? '' : 'none');
+    Array.from(tableBody.rows).forEach(row=> row.style.display = row.cells[7].dataset.status === 'pending' ? '' : 'none');
   });
 
-  window.exportTableToExcel = function(tableID, filename = ''){
+  document.getElementById('exportExcel').addEventListener('click', () => exportTableToExcel('importTable','import_data'));
+  document.getElementById('exportCSV').addEventListener('click', () => exportTableToCSV('import_data.csv'));
+
+  function exportTableToExcel(tableID, filename=''){
     const dataType = 'application/vnd.ms-excel';
-    const tableSelect = document.getElementById(tableID);
-    const tableHTML = tableSelect.outerHTML.replace(/ /g, '%20');
-    filename = filename?filename+'.xls':'excel_data.xls';
+    const tableHTML = document.getElementById(tableID).outerHTML.replace(/ /g, '%20');
+    filename = filename ? filename+'.xls' : 'excel_data.xls';
     const downloadLink = document.createElement("a");
     document.body.appendChild(downloadLink);
     downloadLink.href = 'data:' + dataType + ', ' + tableHTML;
     downloadLink.download = filename;
     downloadLink.click();
-  };
+  }
 
-  window.exportTableToCSV = function(filename){
+  function exportTableToCSV(filename){
     const csv = [];
     const rows = document.querySelectorAll("table tr");
-    for (let i = 0; i < rows.length; i++) {
-      const row = [], cols = rows[i].querySelectorAll("td, th");
-      for (let j = 0; j < cols.length; j++) row.push(cols[j].innerText);
-      csv.push(row.join(","));
-    }
+    rows.forEach(row=>{
+      const cols = row.querySelectorAll("td, th");
+      const rowData = Array.from(cols).map(col => col.innerText);
+      csv.push(rowData.join(","));
+    });
     const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
     const downloadLink = document.createElement("a");
     downloadLink.download = filename;
     downloadLink.href = window.URL.createObjectURL(csvFile);
     downloadLink.click();
-  };
+  }
 </script>
 </body>
 </html>
