@@ -31,8 +31,35 @@
       opacity: 0.7;
       margin-bottom: 20px;
     }
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #333;
+      min-width: 140px;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+    .dropdown-content button {
+      background: none;
+      color: white;
+      border: none;
+      text-align: left;
+      padding: 8px 12px;
+      width: 100%;
+      font-size: 12px;
+    }
+    .dropdown-content button:hover {
+      background-color: #555;
+    }
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
     #filters {
-      max-width: 400px;
+      max-width: 600px;
       margin: 0 auto 15px;
       text-align: center;
     }
@@ -42,6 +69,7 @@
       border-radius: 4px;
       border: none;
       font-size: 14px;
+      margin-bottom: 10px;
     }
     table {
       border-collapse: collapse;
@@ -81,12 +109,6 @@
     button:hover {
       background-color: #e68900;
     }
-    .btn-export {
-      background-color: #4caf50;
-    }
-    .btn-export:hover {
-      background-color: #388e3c;
-    }
     .editable {
       background-color: #fff9e0;
       color: #333;
@@ -96,6 +118,7 @@
       cursor: pointer;
       color: #ff5722;
       font-weight: bold;
+      margin-left: 8px;
     }
     .logo {
       position: absolute;
@@ -109,18 +132,6 @@
       0% { transform: scale(1) rotate(0deg); opacity: 0.8; }
       50% { transform: scale(1.05) rotate(2deg); opacity: 1; }
       100% { transform: scale(1) rotate(-2deg); opacity: 0.9; }
-    }
-    @media (max-width: 768px) {
-      table, thead, tbody, th, td, tr { display: block; }
-      th { position: sticky; top: 0; background: rgba(60, 120, 180, 0.9); }
-      td { border: none; position: relative; padding-left: 50%; }
-      td:before { 
-          position: absolute; 
-          top: 8px; left: 8px; 
-          white-space: nowrap; 
-          font-weight: bold;
-          color: #ffcc80;
-      }
     }
   </style>
 </head>
@@ -139,8 +150,23 @@
   <div id="adminSection" style="display:none;">
     <button id="logoutBtn">Logout</button>
     <button id="addRowBtn">+ Tambah Data</button>
-    <button id="exportExcel" class="btn-export">Export to Excel</button>
-    <button id="exportCSV" class="btn-export">Export to CSV</button>
+
+    <div class="dropdown">
+      <button>Export Data</button>
+      <div class="dropdown-content">
+        <button id="exportExcel">Excel</button>
+        <button id="exportCSV">CSV</button>
+      </div>
+    </div>
+
+    <div class="dropdown">
+      <button>Filter Progress</button>
+      <div class="dropdown-content">
+        <button id="filterAll">Semua</button>
+        <button id="filterDone">Selesai</button>
+        <button id="filterPending">Belum Selesai</button>
+      </div>
+    </div>
 
     <div id="filters">
       <input type="text" placeholder="Cari No BL, Vessel/Voyage, atau POD" id="mainSearch">
@@ -159,6 +185,7 @@
           <th>Port of Destination</th>
           <th>DO Release Date</th>
           <th>Cargo Release Date</th>
+          <th>Progress</th>
           <th>Aksi</th>
         </tr>
       </thead>
@@ -170,155 +197,177 @@
 <img src="logo.png" alt="Logo" class="logo">
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+  import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
-        authDomain: "track-and-trace-ca19a.firebaseapp.com",
-        projectId: "track-and-trace-ca19a",
-        storageBucket: "track-and-trace-ca19a.appspot.com",
-        messagingSenderId: "264766950053",
-        appId: "1:264766950053:web:b871670f2ab2c10d0f1b4c"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
+    authDomain: "track-and-trace-ca19a.firebaseapp.com",
+    projectId: "track-and-trace-ca19a",
+    storageBucket: "track-and-trace-ca19a.appspot.com",
+    messagingSenderId: "264766950053",
+    appId: "1:264766950053:web:b871670f2ab2c10d0f1b4c"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-    const loginSection = document.getElementById("loginSection");
-    const adminSection = document.getElementById("adminSection");
-    const shipmentTableBody = document.querySelector("#shipmentTable tbody");
+  const loginSection = document.getElementById("loginSection");
+  const adminSection = document.getElementById("adminSection");
+  const shipmentTableBody = document.querySelector("#shipmentTable tbody");
 
-    document.getElementById("loginBtn").addEventListener("click", () => {
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-        signInWithEmailAndPassword(auth, email, password)
-            .catch(err => alert("Login gagal: " + err.message));
-    });
+  document.getElementById("loginBtn").addEventListener("click", () => {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    signInWithEmailAndPassword(auth, email, password)
+      .catch(err => alert("Login gagal: " + err.message));
+  });
 
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-        signOut(auth);
-    });
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    signOut(auth);
+  });
 
-    onAuthStateChanged(auth, user => {
-        if (user) {
-            loginSection.style.display = "none";
-            adminSection.style.display = "block";
-            loadShipments();
-        } else {
-            loginSection.style.display = "block";
-            adminSection.style.display = "none";
-        }
-    });
-
-    async function loadShipments() {
-        shipmentTableBody.innerHTML = "";
-        const querySnapshot = await getDocs(collection(db, "shipments"));
-        querySnapshot.forEach(docSnap => {
-            addRowToTable(docSnap.id, docSnap.data());
-        });
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      loginSection.style.display = "none";
+      adminSection.style.display = "block";
+      loadShipments();
+    } else {
+      loginSection.style.display = "block";
+      adminSection.style.display = "none";
     }
+  });
 
-    function addRowToTable(id, data) {
-        const tr = document.createElement("tr");
-        const fields = [
-            "billOfLading","vesselVoyage","eta","portTransit","connectingVessel",
-            "etd","etaPod","portDestination","doReleaseDate","cargoReleaseDate"
-        ];
-        fields.forEach(field => {
-            const td = document.createElement("td");
-            td.textContent = data[field] || "";
-            td.contentEditable = true;
-            td.classList.add("editable");
-            tr.appendChild(td);
-        });
+  async function loadShipments() {
+    shipmentTableBody.innerHTML = "";
+    const querySnapshot = await getDocs(collection(db, "shipments"));
+    querySnapshot.forEach(docSnap => {
+      addRowToTable(docSnap.id, docSnap.data());
+    });
+  }
 
-        const actionTd = document.createElement("td");
-        const saveBtn = document.createElement("button");
-        saveBtn.textContent = "Save";
-        saveBtn.addEventListener("click", async () => {
-            const updatedData = {};
-            fields.forEach((field, index) => {
-                updatedData[field] = tr.cells[index].textContent.trim();
-            });
-            await updateDoc(doc(db, "shipments", id), updatedData);
-            alert("Data berhasil disimpan!");
-        });
+  function addRowToTable(id, data) {
+    const tr = document.createElement("tr");
+    const fields = [
+      "billOfLading","vesselVoyage","eta","portTransit","connectingVessel",
+      "etd","etaPod","portDestination","doReleaseDate","cargoReleaseDate"
+    ];
 
-        const deleteBtn = document.createElement("span");
-        deleteBtn.textContent = "🗑";
-        deleteBtn.classList.add("delete-btn");
-        deleteBtn.addEventListener("click", async () => {
-            if (confirm("Yakin hapus data ini?")) {
-                await deleteDoc(doc(db, "shipments", id));
-                loadShipments();
-            }
-        });
+    fields.forEach(field => {
+      const td = document.createElement("td");
+      td.textContent = data[field] || "";
+      td.contentEditable = true;
+      td.classList.add("editable");
+      tr.appendChild(td);
+    });
 
-        actionTd.appendChild(saveBtn);
-        actionTd.appendChild(deleteBtn);
-        tr.appendChild(actionTd);
-        shipmentTableBody.appendChild(tr);
-    }
+    const progressTd = document.createElement("td");
+    const isComplete = fields.every(f => (data[f] || "").trim() !== "");
+    progressTd.textContent = isComplete ? "✅ Selesai" : "❌ Belum Selesai";
+    progressTd.dataset.status = isComplete ? "done" : "pending";
+    progressTd.style.color = isComplete ? "green" : "red";
+    tr.appendChild(progressTd);
 
-    document.getElementById("addRowBtn").addEventListener("click", async () => {
-        const docRef = await addDoc(collection(db, "shipments"), {
-            billOfLading: "", vesselVoyage: "", eta: "", portTransit: "", connectingVessel: "",
-            etd: "", etaPod: "", portDestination: "", doReleaseDate: "", cargoReleaseDate: ""
-        });
+    const actionTd = document.createElement("td");
+    const saveBtn = document.createElement("button");
+    saveBtn.textContent = "Save";
+    saveBtn.addEventListener("click", async () => {
+      const updatedData = {};
+      fields.forEach((field, index) => {
+        updatedData[field] = tr.cells[index].textContent.trim();
+      });
+      await updateDoc(doc(db, "shipments", id), updatedData);
+      alert("Data berhasil disimpan!");
+      loadShipments();
+    });
+
+    const deleteBtn = document.createElement("span");
+    deleteBtn.textContent = "🗑";
+    deleteBtn.classList.add("delete-btn");
+    deleteBtn.addEventListener("click", async () => {
+      if (confirm("Yakin hapus data ini?")) {
+        await deleteDoc(doc(db, "shipments", id));
         loadShipments();
-    });
-
-    document.getElementById("mainSearch").addEventListener("keyup", function () {
-        const filter = this.value.toLowerCase();
-        const rows = shipmentTableBody.getElementsByTagName("tr");
-        for (let row of rows) {
-            const bl = row.cells[0].textContent.toLowerCase();
-            const vessel = row.cells[1].textContent.toLowerCase();
-            const pod = row.cells[7].textContent.toLowerCase();
-            row.style.display = (bl.includes(filter) || vessel.includes(filter) || pod.includes(filter)) ? "" : "none";
-        }
-    });
-
-    document.getElementById("exportExcel").addEventListener("click", () => {
-        exportTableToExcel("shipmentTable", "shipment_data");
-    });
-
-    document.getElementById("exportCSV").addEventListener("click", () => {
-        exportTableToCSV("shipment_data.csv");
-    });
-
-    function exportTableToExcel(tableID, filename = "") {
-      const dataType = 'application/vnd.ms-excel';
-      const tableSelect = document.getElementById(tableID);
-      const tableHTML = tableSelect.outerHTML.replace(/ /g, '%20');
-      filename = filename ? filename + '.xls' : 'excel_data.xls';
-      const downloadLink = document.createElement("a");
-      document.body.appendChild(downloadLink);
-      downloadLink.href = 'data:' + dataType + ', ' + tableHTML;
-      downloadLink.download = filename;
-      downloadLink.click();
-    }
-
-    function exportTableToCSV(filename) {
-      const csv = [];
-      const rows = document.querySelectorAll("table tr");
-      for (let i = 0; i < rows.length; i++) {
-        const row = [], cols = rows[i].querySelectorAll("td, th");
-        for (let j = 0; j < cols.length; j++) {
-          row.push(cols[j].innerText);
-        }
-        csv.push(row.join(","));
       }
-      const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
-      const downloadLink = document.createElement("a");
-      downloadLink.download = filename;
-      downloadLink.href = window.URL.createObjectURL(csvFile);
-      downloadLink.click();
-    }
+    });
 
+    actionTd.appendChild(saveBtn);
+    actionTd.appendChild(deleteBtn);
+    tr.appendChild(actionTd);
+    shipmentTableBody.appendChild(tr);
+  }
+
+  document.getElementById("addRowBtn").addEventListener("click", async () => {
+    await addDoc(collection(db, "shipments"), {
+      billOfLading: "", vesselVoyage: "", eta: "", portTransit: "", connectingVessel: "",
+      etd: "", etaPod: "", portDestination: "", doReleaseDate: "", cargoReleaseDate: ""
+    });
+    loadShipments();
+  });
+
+  document.getElementById("mainSearch").addEventListener("keyup", function () {
+    const filter = this.value.toLowerCase();
+    const rows = shipmentTableBody.getElementsByTagName("tr");
+    for (let row of rows) {
+      const bl = row.cells[0].textContent.toLowerCase();
+      const vessel = row.cells[1].textContent.toLowerCase();
+      const pod = row.cells[7].textContent.toLowerCase();
+      row.style.display = (bl.includes(filter) || vessel.includes(filter) || pod.includes(filter)) ? "" : "none";
+    }
+  });
+
+  document.getElementById("filterAll").addEventListener("click", () => {
+    Array.from(shipmentTableBody.rows).forEach(row => row.style.display = "");
+  });
+  document.getElementById("filterDone").addEventListener("click", () => {
+    Array.from(shipmentTableBody.rows).forEach(row => {
+      row.style.display = row.cells[10].dataset.status === "done" ? "" : "none";
+    });
+  });
+  document.getElementById("filterPending").addEventListener("click", () => {
+    Array.from(shipmentTableBody.rows).forEach(row => {
+      row.style.display = row.cells[10].dataset.status === "pending" ? "" : "none";
+    });
+  });
+
+  document.getElementById("exportExcel").addEventListener("click", () => {
+    exportTableToExcel("shipmentTable", "shipment_data");
+  });
+
+  document.getElementById("exportCSV").addEventListener("click", () => {
+    exportTableToCSV("shipment_data.csv");
+  });
+
+  function exportTableToExcel(tableID, filename = "") {
+    const dataType = 'application/vnd.ms-excel';
+    const tableSelect = document.getElementById(tableID);
+    const tableHTML = tableSelect.outerHTML.replace(/ /g, '%20');
+    filename = filename ? filename + '.xls' : 'excel_data.xls';
+    const downloadLink = document.createElement("a");
+    document.body.appendChild(downloadLink);
+    downloadLink.href = 'data:' + dataType + ', ' + tableHTML;
+    downloadLink.download = filename;
+    downloadLink.click();
+  }
+
+  function exportTableToCSV(filename) {
+    const csv = [];
+    const rows = document.querySelectorAll("table tr");
+    for (let i = 0; i < rows.length; i++) {
+      const row = [], cols = rows[i].querySelectorAll("td, th");
+      for (let j = 0; j < cols.length; j++) {
+        row.push(cols[j].innerText);
+      }
+      csv.push(row.join(","));
+    }
+    const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
+    const downloadLink = document.createElement("a");
+    downloadLink.download = filename;
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+    downloadLink.click();
+  }
 </script>
 </body>
 </html>
