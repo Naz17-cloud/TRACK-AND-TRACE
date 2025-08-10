@@ -10,10 +10,10 @@
   .overlay{background:rgba(0,0,0,0.5);min-height:100vh;padding:24px;border-radius:8px}
   h2{color:#ffcc80;text-align:center;margin-bottom:6px}
   .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin-bottom:12px}
-  .btn{padding:6px 10px;border-radius:6px;border:none;font-weight:600;cursor:pointer}
+  .btn{padding:6px 10px;border-radius:6px;border:none;font-weight:600;cursor:pointer;font-size:13px}
   .btn-primary{background:#ff9800;color:#fff}
   .btn-success{background:#4caf50;color:#fff}
-  input.search{padding:8px;border-radius:6px;border:none;width:320px}
+  input.search{padding:8px;border-radius:6px;border:none;width:260px;font-size:13px}
   table{width:100%;border-collapse:collapse;background:rgba(255,255,255,0.95);color:#333;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.15)}
   th{background:linear-gradient(90deg,#3c78b4,#2864a0);color:#fff;padding:8px;text-align:left;font-size:13px}
   td{padding:6px;font-size:13px}
@@ -42,10 +42,25 @@
       <div class="controls">
         <button id="logoutBtn" class="btn btn-primary">Logout</button>
         <button id="addRowBtn" class="btn btn-primary">+ Tambah Data</button>
+
+        <!-- Tombol Export -->
+        <div>
+          <button class="btn btn-success" onclick="exportTableToExcel('importTable','import_data')">Export Excel</button>
+          <button class="btn btn-success" onclick="exportTableToCSV('import_data.csv')">Export CSV</button>
+        </div>
+
+        <!-- Filter Progress -->
+        <div>
+          <button id="filterAll" class="btn btn-primary">Semua</button>
+          <button id="filterDone" class="btn btn-primary">Selesai</button>
+          <button id="filterPending" class="btn btn-primary">Belum Selesai</button>
+        </div>
+
+        <!-- Pencarian -->
         <input id="mainSearch" class="search" placeholder="Cari Bill of Lading, POL, atau POD">
       </div>
 
-      <table id="importTable" aria-live="polite">
+      <table id="importTable">
         <thead>
           <tr>
             <th>Bill of Lading</th>
@@ -104,10 +119,8 @@
 
   async function loadImports(){
     importTableBody.innerHTML = '';
-    try {
-      const snap = await getDocs(collection(db,'importShipments'));
-      snap.forEach(s => addRowToTable(s.id, s.data()));
-    } catch(err){ console.error('loadImports error', err); alert('Gagal load importShipments. Cek console.'); }
+    const snap = await getDocs(collection(db,'importShipments'));
+    snap.forEach(s => addRowToTable(s.id, s.data()));
   }
 
   function addRowToTable(id, data){
@@ -121,9 +134,9 @@
       tr.appendChild(td);
     });
 
+    const isComplete = fields.every(f => (data[f]||'').trim() !== '');
     const progressTd = document.createElement('td');
-    const isComplete = fields.every(f => (data[f]||'').toString().trim() !== '');
-    progressTd.textContent = isComplete ? '✅' : '❌';
+    progressTd.textContent = isComplete ? '✅ Selesai' : '❌ Belum Selesai';
     progressTd.dataset.status = isComplete ? 'done' : 'pending';
     progressTd.style.color = isComplete ? 'green' : 'red';
     tr.appendChild(progressTd);
@@ -131,28 +144,34 @@
     const actionTd = document.createElement('td');
     const saveBtn = document.createElement('button');
     saveBtn.textContent = 'Save';
-    saveBtn.classList.add('btn');
+    saveBtn.classList.add('btn','btn-primary');
     saveBtn.addEventListener('click', async () => {
       const updated = {};
-      fields.forEach((field,i)=> updated[field] = tr.cells[i].textContent.trim());
+      fields.forEach((f,i)=> updated[f] = tr.cells[i].textContent.trim());
       if (!updated.billOfLading) return alert('Bill Of Lading wajib diisi');
-      try { await updateDoc(doc(db,'importShipments',id),updated); alert('Tersimpan'); loadImports(); } catch(e){ console.error(e); alert('Gagal menyimpan'); }
+      await updateDoc(doc(db,'importShipments',id),updated);
+      loadImports();
+    });
+    const delBtn = document.createElement('span');
+    delBtn.textContent = '🗑';
+    delBtn.classList.add('delete-btn');
+    delBtn.addEventListener('click', async () => {
+      if (!confirm('Yakin hapus?')) return;
+      await deleteDoc(doc(db,'importShipments',id));
+      loadImports();
     });
 
-    const del = document.createElement('span');
-    del.textContent = '🗑';
-    del.classList.add('delete-btn');
-    del.addEventListener('click', async ()=>{ if(!confirm('Yakin hapus?')) return; try{ await deleteDoc(doc(db,'importShipments',id)); loadImports(); } catch(e){ console.error(e); alert('Gagal hapus'); } });
-
     actionTd.appendChild(saveBtn);
-    actionTd.appendChild(del);
+    actionTd.appendChild(delBtn);
     tr.appendChild(actionTd);
     importTableBody.appendChild(tr);
   }
 
   document.getElementById('addRowBtn').addEventListener('click', async () => {
-    const newDoc = { billOfLading:'', pol:'', pod:'', etd:'', eta:'', incoterm:'', typeOfShipment:'' };
-    try { await addDoc(collection(db,'importShipments'), newDoc); loadImports(); } catch(e){ console.error(e); alert('Gagal tambah data'); }
+    await addDoc(collection(db,'importShipments'), {
+      billOfLading:'', pol:'', pod:'', etd:'', eta:'', incoterm:'', typeOfShipment:''
+    });
+    loadImports();
   });
 
   document.getElementById('mainSearch').addEventListener('input', function(){
@@ -164,6 +183,43 @@
       row.style.display = (bol.includes(q)||pol.includes(q)||pod.includes(q)) ? '' : 'none';
     });
   });
+
+  document.getElementById('filterAll').addEventListener('click', () => {
+    Array.from(importTableBody.rows).forEach(r=> r.style.display='');
+  });
+  document.getElementById('filterDone').addEventListener('click', () => {
+    Array.from(importTableBody.rows).forEach(r=> r.style.display = r.cells[7].dataset.status === 'done' ? '' : 'none');
+  });
+  document.getElementById('filterPending').addEventListener('click', () => {
+    Array.from(importTableBody.rows).forEach(r=> r.style.display = r.cells[7].dataset.status === 'pending' ? '' : 'none');
+  });
+
+  window.exportTableToExcel = function(tableID, filename = ''){
+    const dataType = 'application/vnd.ms-excel';
+    const tableSelect = document.getElementById(tableID);
+    const tableHTML = tableSelect.outerHTML.replace(/ /g, '%20');
+    filename = filename?filename+'.xls':'excel_data.xls';
+    const downloadLink = document.createElement("a");
+    document.body.appendChild(downloadLink);
+    downloadLink.href = 'data:' + dataType + ', ' + tableHTML;
+    downloadLink.download = filename;
+    downloadLink.click();
+  };
+
+  window.exportTableToCSV = function(filename){
+    const csv = [];
+    const rows = document.querySelectorAll("table tr");
+    for (let i = 0; i < rows.length; i++) {
+      const row = [], cols = rows[i].querySelectorAll("td, th");
+      for (let j = 0; j < cols.length; j++) row.push(cols[j].innerText);
+      csv.push(row.join(","));
+    }
+    const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
+    const downloadLink = document.createElement("a");
+    downloadLink.download = filename;
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+    downloadLink.click();
+  };
 </script>
 </body>
 </html>
