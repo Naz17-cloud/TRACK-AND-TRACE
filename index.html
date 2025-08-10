@@ -1,208 +1,207 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shipment Tracking</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Poppins', sans-serif;
-      background: url('background.jpg') no-repeat center center fixed;
-      background-size: cover;
-      color: #fff;
-    }
-    .overlay {
-      background-color: rgba(0, 0, 0, 0.5);
-      min-height: 100vh;
-      padding: 30px;
-    }
-    .search-box {
-      max-width: 500px;
-      margin: 0 auto;
-      text-align: center;
-      padding-top: 80px;
-    }
-    .search-box input {
-      padding: 10px;
-      width: 60%;
-      border: none;
-      border-radius: 4px;
-      font-size: 16px;
-    }
-    .search-box button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      background-color: #ff9800;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-      margin-left: 5px;
-    }
-    .result-box {
-      max-width: 800px;
-      margin: 20px auto 0;
-      background-color: rgba(255, 255, 255, 0.1);
-      padding: 20px;
-      border-radius: 8px;
-      display: none;
-      animation: fadeIn 0.5s ease-in-out;
-    }
-    .result-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px 40px;
-    }
-    .label { font-weight: 600; }
-    .value { font-weight: 400; }
-    .not-found {
-      text-align: center;
-      font-size: 18px;
-      font-weight: 600;
-      padding: 20px;
-    }
-    @keyframes fadeIn {
-      from {opacity: 0;}
-      to {opacity: 1;}
-    }
-    @media(max-width: 600px) {
-      .result-grid { grid-template-columns: 1fr; }
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Shipment Tracking</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: url('background.jpg') no-repeat center center fixed;
+    background-size: cover;
+    color: #fff;
+  }
+  .overlay {
+    background-color: rgba(0, 0, 0, 0.5);
+    min-height: 100vh;
+    padding: 30px;
+  }
+  .mode-buttons {
+    text-align: center;
+    margin-top: 40px;
+  }
+  .mode-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    background-color: #ff9800;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    margin: 5px;
+  }
+  .search-box {
+    max-width: 500px;
+    margin: 20px auto 0;
+    text-align: center;
+  }
+  .search-box input {
+    padding: 10px;
+    width: 60%;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+  }
+  .search-box button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    background-color: #4caf50;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    margin-left: 5px;
+  }
+  .result-box {
+    max-width: 800px;
+    margin: 20px auto 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 8px;
+    display: none;
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 40px;
+  }
+  .label { font-weight: 600; }
+  .value { font-weight: 400; }
+  .not-found {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 20px;
+  }
+  @keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+  }
+  @media(max-width: 600px) {
+    .result-grid { grid-template-columns: 1fr; }
+  }
+  .loader {
+    display: none;
+    border: 6px solid rgba(255,255,255,0.2);
+    border-top: 6px solid #ff9800;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+  }
+  @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
+  .logo {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 100px;
+    height: auto;
+    animation: logoAnim 1.5s ease-in-out infinite alternate;
+  }
+  @keyframes logoAnim {
+    0% { transform: scale(1) rotate(0deg); opacity: 0.8; }
+    50% { transform: scale(1.05) rotate(2deg); opacity: 1; }
+    100% { transform: scale(1) rotate(-2deg); opacity: 0.9; }
+  }
+</style>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-    /* Loader animasi */
-    .loader {
-      display: none;
-      border: 6px solid rgba(255,255,255,0.2);
-      border-top: 6px solid #ff9800;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto;
+const firebaseConfig = {
+  apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
+  authDomain: "track-and-trace-ca19a.firebaseapp.com",
+  projectId: "track-and-trace-ca19a",
+  storageBucket: "track-and-trace-ca19a.appspot.com",
+  messagingSenderId: "264766950053",
+  appId: "1:264766950053:web:b871670f2ab2c10d0f1b4c",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let currentMode = "export"; // default
+
+document.getElementById("modeExport").addEventListener("click", () => {
+  currentMode = "export";
+  document.getElementById("blInput").placeholder = "Masukkan Bill of Lading Export";
+});
+document.getElementById("modeImport").addEventListener("click", () => {
+  currentMode = "import";
+  document.getElementById("blInput").placeholder = "Masukkan Bill of Lading Import";
+});
+
+const loader = document.getElementById("loader");
+const resultBox = document.getElementById("resultBox");
+
+document.getElementById("searchBtn").addEventListener("click", async () => {
+  const blNumber = document.getElementById("blInput").value.trim();
+  if (!blNumber) {
+    alert("Masukkan nomor Bill of Lading");
+    return;
+  }
+
+  resultBox.innerHTML = "";
+  resultBox.style.display = "none";
+  loader.style.display = "block";
+
+  const collectionName = currentMode === "export" ? "shipments" : "importShipments";
+  const querySnapshot = await getDocs(query(collection(db, collectionName), where("billOfLading", "==", blNumber)));
+
+  loader.style.display = "none";
+  resultBox.style.display = "block";
+
+  if (querySnapshot.empty) {
+    resultBox.innerHTML = '<div class="not-found">Data tidak ditemukan</div>';
+    return;
+  }
+
+  querySnapshot.forEach((doc) => {
+    const data = doc.data();
+    let html = `<div class="result-grid">`;
+
+    if (currentMode === "export") {
+      html += `
+        <div><span class="label">Bill Of Lading:</span> <span class="value">${data.billOfLading || ''}</span></div>
+        <div><span class="label">Vessel/Voyage:</span> <span class="value">${data.vesselVoyage || ''}</span></div>
+        <div><span class="label">ETA:</span> <span class="value">${data.eta || ''}</span></div>
+        <div><span class="label">Port Of Transit:</span> <span class="value">${data.portTransit || ''}</span></div>
+        <div><span class="label">Connecting Vessel:</span> <span class="value">${data.connectingVessel || ''}</span></div>
+        <div><span class="label">Port Of Destination:</span> <span class="value">${data.portDestination || ''}</span></div>
+        <div><span class="label">ETD:</span> <span class="value">${data.etd || ''}</span></div>
+        <div><span class="label">ETA POD:</span> <span class="value">${data.etaPod || ''}</span></div>
+        <div><span class="label">DO Release Date:</span> <span class="value">${data.doReleaseDate || ''}</span></div>
+        <div><span class="label">Cargo Release Date:</span> <span class="value">${data.cargoReleaseDate || ''}</span></div>
+      `;
+    } else {
+      html += `
+        <div><span class="label">Bill Of Lading:</span> <span class="value">${data.billOfLading || ''}</span></div>
+        <div><span class="label">POL:</span> <span class="value">${data.pol || ''}</span></div>
+        <div><span class="label">POD:</span> <span class="value">${data.pod || ''}</span></div>
+        <div><span class="label">ETD:</span> <span class="value">${data.etd || ''}</span></div>
+        <div><span class="label">ETA:</span> <span class="value">${data.eta || ''}</span></div>
+        <div><span class="label">Incoterm:</span> <span class="value">${data.incoterm || ''}</span></div>
+        <div><span class="label">Type of Shipment:</span> <span class="value">${data.typeOfShipment || ''}</span></div>
+      `;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg);}
-      100% { transform: rotate(360deg);}
-    }
-
-    /* Timeline tracking */
-    .timeline {
-      margin-top: 20px;
-      padding-left: 20px;
-      border-left: 3px solid #ff9800;
-    }
-    .timeline-item {
-      margin-bottom: 15px;
-      position: relative;
-    }
-    .timeline-item::before {
-      content: '';
-      position: absolute;
-      left: -9px;
-      top: 3px;
-      width: 15px;
-      height: 15px;
-      background-color: #ff9800;
-      border-radius: 50%;
-    }
-    .timeline-date {
-      font-size: 12px;
-      opacity: 0.8;
-    }
-    .timeline-text {
-      font-weight: 500;
-    }
-
-    /* Logo kanan */
-    .logo {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      width: 100px;
-      height: auto;
-      animation: logoAnim 1.5s ease-in-out infinite alternate;
-    }
-    @keyframes logoAnim {
-      0% { transform: scale(1) rotate(0deg); opacity: 0.8; }
-      50% { transform: scale(1.05) rotate(2deg); opacity: 1; }
-      100% { transform: scale(1) rotate(-2deg); opacity: 0.9; }
-    }
-  </style>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBwIvGNogDk6nKCCcoWxmnvex4pbSIR07g",
-      authDomain: "track-and-trace-ca19a.firebaseapp.com",
-      projectId: "track-and-trace-ca19a",
-      storageBucket: "track-and-trace-ca19a.appspot.com",
-      messagingSenderId: "264766950053",
-      appId: "1:264766950053:web:b871670f2ab2c10d0f1b4c",
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    const loader = document.getElementById("loader");
-    const resultBox = document.getElementById('resultBox');
-
-    document.getElementById('searchBtn').addEventListener('click', async () => {
-      const blNumber = document.getElementById('blInput').value.trim();
-      resultBox.innerHTML = '';
-      resultBox.style.display = 'none';
-      loader.style.display = 'block';
-
-      const querySnapshot = await getDocs(query(collection(db, "shipments"), where("billOfLading", "==", blNumber)));
-
-      loader.style.display = 'none';
-      resultBox.style.display = 'block';
-
-      if (querySnapshot.empty) {
-        resultBox.innerHTML = '<div class="not-found">No Details Found</div>';
-        return;
-      }
-
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        
-        // Info utama
-        let html = `
-          <div class="result-grid">
-            <div><span class="label">Bill Of Lading:</span> <span class="value">${data.billOfLading || ''}</span></div>
-            <div><span class="label">Vessel/Voyage:</span> <span class="value">${data.vesselVoyage || ''}</span></div>
-            <div><span class="label">ETA:</span> <span class="value">${data.eta || ''}</span></div>
-            <div><span class="label">Port Of Transit:</span> <span class="value">${data.portTransit || ''}</span></div>
-            <div><span class="label">Connecting Vessel:</span> <span class="value">${data.connectingVessel || ''}</span></div>
-            <div><span class="label">Port Of Destination:</span> <span class="value">${data.portDestination || ''}</span></div>
-            <div><span class="label">ETD:</span> <span class="value">${data.etd || ''}</span></div>
-            <div><span class="label">ETA POD:</span> <span class="value">${data.etaPod || ''}</span></div>
-            <div><span class="label">DO Release Date:</span> <span class="value">${data.doReleaseDate || ''}</span></div>
-            <div><span class="label">Cargo Release Date:</span> <span class="value">${data.cargoReleaseDate || ''}</span></div>
-          </div>
-        `;
-
-        // Timeline status tracking (contoh urutan berdasarkan data tanggal)
-        html += `<div class="timeline">`;
-        if (data.etd) html += `<div class="timeline-item"><div class="timeline-date">${data.etd}</div><div class="timeline-text">Departed from origin</div></div>`;
-        if (data.portTransit) html += `<div class="timeline-item"><div class="timeline-date">${data.eta || ''}</div><div class="timeline-text">Arrived at transit port: ${data.portTransit}</div></div>`;
-        if (data.connectingVessel) html += `<div class="timeline-item"><div class="timeline-date">${data.etd || ''}</div><div class="timeline-text">Transferred to vessel: ${data.connectingVessel}</div></div>`;
-        if (data.etaPod) html += `<div class="timeline-item"><div class="timeline-date">${data.etaPod}</div><div class="timeline-text">Expected arrival at destination port</div></div>`;
-        if (data.doReleaseDate) html += `<div class="timeline-item"><div class="timeline-date">${data.doReleaseDate}</div><div class="timeline-text">DO Released</div></div>`;
-        if (data.cargoReleaseDate) html += `<div class="timeline-item"><div class="timeline-date">${data.cargoReleaseDate}</div><div class="timeline-text">Cargo Released</div></div>`;
-        html += `</div>`;
-
-        resultBox.innerHTML += html;
-      });
-    });
-  </script>
+    html += `</div>`;
+    resultBox.innerHTML += html;
+  });
+});
+</script>
 </head>
 <body>
   <div class="overlay">
+    <div class="mode-buttons">
+      <button id="modeExport">🔹 Cek Export</button>
+      <button id="modeImport">🔸 Cek Import</button>
+    </div>
     <div class="search-box">
-      <input type="text" id="blInput" placeholder="Enter Bill of Lading Number">
+      <input type="text" id="blInput" placeholder="Masukkan Bill of Lading Export">
       <button id="searchBtn">Cari</button>
     </div>
     <div id="loader" class="loader"></div>
